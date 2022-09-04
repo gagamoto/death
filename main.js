@@ -28,12 +28,22 @@ class Game {
     draw() {
         this.context.clearRect(0, 0, this.context.canvas.clientWidth, this.context.canvas.clientHeight);
         drawBox(this.context, 0, 0, REFERENCE_SIZE, REFERENCE_SIZE, "yellow"); // FIXME REMOVE
+
+        // TMP DRAW A GRID
+        let gridWidth = 15;
+        let gridHeight = 15;
+        let myGrid = generateGrid(gridWidth, gridHeight);
+        let boxWidth = REFERENCE_SIZE / gridWidth;
+
+        for (let i = 0; i < gridWidth; i++) {
+            for (let j = 0; j < gridHeight; j++) {
+                drawBox(this.context, i*boxWidth, j*boxWidth, boxWidth, boxWidth, null, "blue", 1);
+            }
+        }
     }
 }
 
-function generateGrid() {
-    let gridWidth = 15;
-    let gridHeight = 15;
+function generateGrid(gridWidth, gridHeight) {
     grid = new Array(gridWidth);
     for (let i = 0; i < gridWidth; i++) {
         this.grid[i] = new Array(gridHeight);
@@ -63,7 +73,6 @@ function initializeCanvas() {
 function main() {
     // -- Canvas
     console.log("Hello, Death!")
-    myGrid = generateGrid();
     myCanvas = initializeCanvas();
     let game = new Game(myCanvas);
     game.draw();
