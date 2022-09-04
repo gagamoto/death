@@ -51,11 +51,12 @@ class Platform extends GameObject {
     constructor(context, x, y, width, height) {
         super(context, x, y, width, height);
         this.dead = false;
+
+        this.color = "black"; // FIXME
     }
     draw(){
-        let color = "black"; // FIXME
         drawBox(
-            this.context, this.x, this.y, this.width, this.height, color); // FIXME
+            this.context, this.x, this.y, this.width, this.height, this.color); // FIXME
             if (DEBUG_MODE) {super.draw();}
         }
 }
@@ -64,11 +65,15 @@ class MainCharacter extends GameObject {
     constructor(context, x, y, width, height) {
         super(context, x, y, width, height);
         this.dx = 1; // FIXME
-        this.dy = 0;
+        this.dy = 1; // FIXME
+        this.falling = true;
     }
     move() {
+        // FIXME DECELERATE IF NOT GROUNDED
         this.x += this.dx; // FIXME TIMES SPEED
-        this.y += this.dy;
+        if (this.falling) {
+            this.y += this.dy;
+        }
     }
     turnBack() {
         this.dx = -this.dx;
@@ -92,6 +97,25 @@ class Game {
             }
             else if (this.character.getLeft() < 0) {
                 this.character.turnBack();
+            }
+            if (this.character.getBottom() >= REFERENCE_SIZE) {
+                this.character.falling = false;
+            }
+        }
+        // Is character grounded on a platform?
+        for (let platform of this.platforms) {
+            // FIXME METHOD A AND B HORIZONTALLY ALIGNED?
+            if (this.character.getRight() > platform.getLeft() &&
+                this.character.getLeft() < platform.getRight()) {
+                platform.color = "cyan"; // FIXME REMOVE
+                // FIXME METHOD A AND B HORIZONTALLY ALIGNED?
+                if (this.character.getBottom() >= platform.getTop() &&
+                    this.character.getBottom() < platform.getBottom()) {
+                    platform.color = "blue"; // FIXME REMOVE
+                }
+            }
+            else {
+                platform.color = "black"; // FIXME REMOVE
             }
         }
     }
