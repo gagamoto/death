@@ -16,7 +16,62 @@ function drawBox(context, x, y, width, height, fillStyle = null, strokeStyle = n
     context.closePath();
 }
 
+DEBUG_MODE = true; // DRAW BOX
 REFERENCE_SIZE = 100;
+
+class GameObject {
+    constructor(context, x, y, width, height) {
+        this.uid = String(Math.random()).substring(2); // unique identifier
+        console.log("New GameObject with pseudo-unique identifier " + this.uid)
+        this.context = context;
+
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+    }
+    draw(){
+        drawBox(
+            this.context,
+            this.x, this.y,
+            this.width, this.height,
+            null, "magenta", .5); // FIXME
+    }
+    getLeft(margin=0) {return this.x;}
+    getRight(margin=0) {return this.x + this.width;}
+    getTop(margin=0) {return this.y;}
+    getBottom(margin=0) {return this.y + this.height;}
+    getCenter() {
+        console.error("Not implemented yet!");
+        return null;
+    }
+}
+
+class Platform extends GameObject {
+    constructor(context, x, y, width, height) {
+        super(context, x, y, width, height);
+        this.dead = false;
+    }
+    draw(){
+        let color = "black"; // FIXME
+        drawBox(
+            this.context, this.x, this.y, this.width, this.height, color); // FIXME
+            if (DEBUG_MODE) {super.draw();}
+        }
+}
+
+class MainCharacter extends GameObject {
+    constructor(context, x, y, width, height) {
+        super(context, x, y, width, height);
+        this.dx = 0;
+        this.dy = 0;
+    }
+
+    move() {
+        this.x += this.dx;
+        this.y += this.dy;
+    }
+}
 
 class Game {
     constructor(canvas) {
@@ -24,22 +79,47 @@ class Game {
         this.context = canvas.getContext('2d');
         let factor = this.canvas.width / REFERENCE_SIZE;
         this.context.scale(factor, factor);
+
+        this.grid = null;
+        this.character = null;
     }
     draw() {
         this.context.clearRect(0, 0, this.context.canvas.clientWidth, this.context.canvas.clientHeight);
         drawBox(this.context, 0, 0, REFERENCE_SIZE, REFERENCE_SIZE, "yellow"); // FIXME REMOVE
 
-        // TMP DRAW A GRID
-        let gridWidth = 15;
-        let gridHeight = 15;
-        let myGrid = generateGrid(gridWidth, gridHeight);
-        let boxWidth = REFERENCE_SIZE / gridWidth;
-
-        for (let i = 0; i < gridWidth; i++) {
-            for (let j = 0; j < gridHeight; j++) {
-                drawBox(this.context, i*boxWidth, j*boxWidth, boxWidth, boxWidth, null, "blue", 1);
-            }
+        // DRAW PLATFORMS
+        for (let platform of this.platforms) {
+            platform.draw();
         }
+        // DRAW MAIN CHARACTER
+        this.character.draw();
+
+    }
+    initialize() {
+        let gridWidth = 15;
+        let blockWidth = REFERENCE_SIZE / gridWidth;
+        let gridHeight = 15;
+        let blockHeight = REFERENCE_SIZE / gridHeight;
+
+        this.grid = generateGrid(gridWidth, gridHeight);
+
+        // Construct platforms
+        this.platforms = new Array();
+        for (let i = 0; i < gridWidth ; i++) {
+            for (let j = 0; j < gridHeight; j++) {
+                if (!this.grid[i][j]) {continue;}
+                this.platforms.push(
+                    new Platform(
+                        this.context,
+                        i*blockWidth,
+                        j*blockHeight,
+                        blockWidth,
+                        blockHeight));
+           }
+        }
+        // Construct main character
+        this.character = new MainCharacter(
+            this.context, 20, 10, 6, 6); // FIXME VALUES?
     }
 }
 
@@ -75,6 +155,7 @@ function main() {
     console.log("Hello, Death!")
     myCanvas = initializeCanvas();
     let game = new Game(myCanvas);
+    game.initialize();
     game.draw();
     console.log("Bye, Death!")
 }
