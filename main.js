@@ -62,7 +62,8 @@ class Platform extends GameObject {
             drawBox(
                 this.context,
                 this.x, this.y, this.width, this.height,
-                this.color);   
+                this.color,
+                "black", .5); // FIXME   
         }
         if (DEBUG_MODE_GRAPHIC) { super.draw(); }
     }
@@ -109,6 +110,8 @@ class Game {
         let factor = this.canvas.width / REFERENCE_SIZE;
         this.context.scale(factor, factor);
 
+        this.controller = new Controller();
+
         this.grid = null;
         this.character = null;
     }
@@ -136,6 +139,7 @@ class Game {
                     }
                     // FIXME CHARACTER GROUNDED METHOD
                     this.character.platformUid = platform.uid;
+                    this.character.y = platform.getTop() - this.character.height;
                     platform.trigger();
                 }
             }
@@ -154,6 +158,7 @@ class Game {
             }
             if (this.character.getBottom() >= REFERENCE_SIZE) {
                 this.character.platformUid = "debug_bottom"
+                this.character.y = REFERENCE_SIZE - this.character.height;
             }
         }
     }
@@ -207,11 +212,17 @@ class Game {
             this.context, 20, 10, 5, 5); // FIXME VALUES?
     }
     run() {
-        this.character.move();
         this.collisions();
+        this.character.move();
         this.draw();
         requestAnimationFrame(() => this.run());
     }
+    // FIXME MAKE CONTROLLER CLASS
+    // keyDownHandler(e) {
+    //     if (e.key == " ") {
+    //         console.log("Space pressed!")
+    //     }
+    // }
 }
 
 function generateGrid(gridWidth, gridHeight) {
@@ -241,13 +252,27 @@ function initializeCanvas() {
     return myCanvas;
 }
 
+class Controller {
+    keyDownHandler(e) {
+        if (e.key == " ") {
+            console.log("Space pressed!")
+        }
+    }
+}
+
 function main() {
-    // -- Canvas
     console.log("Hello, Death!")
+    // -- Canvas
     myCanvas = initializeCanvas();
     let game = new Game(myCanvas);
     game.initialize();
     game.run();
+    // -- Control
+    document.addEventListener("keydown", game.controller.keyDownHandler, false);
+    // document.addEventListener("keyup", keyUpHandler, false);
+    // document.addEventListener("touchstart", touchDownHandler, false);
+    // document.addEventListener("touchend", touchUpDownHandler, false);
+    // --
     console.log("Bye, Death!")
 }
 
