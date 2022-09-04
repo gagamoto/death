@@ -63,13 +63,15 @@ class Platform extends GameObject {
 class MainCharacter extends GameObject {
     constructor(context, x, y, width, height) {
         super(context, x, y, width, height);
-        this.dx = 0;
+        this.dx = 1; // FIXME
         this.dy = 0;
     }
-
     move() {
-        this.x += this.dx;
+        this.x += this.dx; // FIXME TIMES SPEED
         this.y += this.dy;
+    }
+    turnBack() {
+        this.dx = -this.dx;
     }
 }
 
@@ -82,6 +84,16 @@ class Game {
 
         this.grid = null;
         this.character = null;
+    }
+    collisions() {
+        if (DEBUG_MODE) {
+            if (this.character.getRight() > REFERENCE_SIZE) {
+                this.character.turnBack();
+            }
+            else if (this.character.getLeft() < 0) {
+                this.character.turnBack();
+            }
+        }
     }
     draw() {
         this.context.clearRect(0, 0, this.context.canvas.clientWidth, this.context.canvas.clientHeight);
@@ -121,6 +133,12 @@ class Game {
         this.character = new MainCharacter(
             this.context, 20, 10, 6, 6); // FIXME VALUES?
     }
+    run() {
+        this.character.move();
+        this.collisions();
+        this.draw();
+        requestAnimationFrame(() => this.run());
+    }
 }
 
 function generateGrid(gridWidth, gridHeight) {
@@ -156,7 +174,7 @@ function main() {
     myCanvas = initializeCanvas();
     let game = new Game(myCanvas);
     game.initialize();
-    game.draw();
+    game.run();
     console.log("Bye, Death!")
 }
 
