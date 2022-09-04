@@ -110,8 +110,6 @@ class Game {
         let factor = this.canvas.width / REFERENCE_SIZE;
         this.context.scale(factor, factor);
 
-        this.controller = new Controller();
-
         this.grid = null;
         this.character = null;
     }
@@ -162,6 +160,17 @@ class Game {
             }
         }
     }
+    control() {
+        // FIXME CONCURENCY
+        if (gControls["ArrowLeft"]) {
+            console.log("Left pressed!");
+            this.character.dx = -1;
+        }
+        if (gControls["ArrowRight"]) {
+            console.log("Rigth pressed!");
+            this.character.dx = 1;
+        }
+    }
     draw() {
         this.context.clearRect(0, 0, this.context.canvas.clientWidth, this.context.canvas.clientHeight);
 
@@ -183,7 +192,6 @@ class Game {
         }
         // DRAW MAIN CHARACTER
         this.character.draw();
-
     }
     initialize() {
         let gridWidth = 12;
@@ -212,17 +220,13 @@ class Game {
             this.context, 20, 10, 5, 5); // FIXME VALUES?
     }
     run() {
+        this.control();
         this.collisions();
         this.character.move();
         this.draw();
         requestAnimationFrame(() => this.run());
     }
     // FIXME MAKE CONTROLLER CLASS
-    // keyDownHandler(e) {
-    //     if (e.key == " ") {
-    //         console.log("Space pressed!")
-    //     }
-    // }
 }
 
 function generateGrid(gridWidth, gridHeight) {
@@ -252,12 +256,18 @@ function initializeCanvas() {
     return myCanvas;
 }
 
-class Controller {
-    keyDownHandler(e) {
-        if (e.key == " ") {
-            console.log("Space pressed!")
-        }
-    }
+gControls = new Object(); // FIXME NOT GLOBAL
+
+function keyDownHandler(e) {
+    console.log("Key down: " + e.key);
+    gControls[e.key] = true;
+    console.log(gControls); // FIXME REMOVE
+}
+
+function keyUpHandler(e) {
+    console.log("Key up: " + e.key);
+    gControls[e.key] = false;
+    console.log(gControls); // FIXME REMOVE
 }
 
 function main() {
@@ -268,8 +278,8 @@ function main() {
     game.initialize();
     game.run();
     // -- Control
-    document.addEventListener("keydown", game.controller.keyDownHandler, false);
-    // document.addEventListener("keyup", keyUpHandler, false);
+    document.addEventListener("keydown", keyDownHandler, false);
+    document.addEventListener("keyup", keyUpHandler, false);
     // document.addEventListener("touchstart", touchDownHandler, false);
     // document.addEventListener("touchend", touchUpDownHandler, false);
     // --
