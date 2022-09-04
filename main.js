@@ -16,7 +16,9 @@ function drawBox(context, x, y, width, height, fillStyle = null, strokeStyle = n
     context.closePath();
 }
 
-DEBUG_MODE = true; // DRAW BOX
+DEBUG_MODE = false;
+DEBUG_MODE_GRAPHIC = false || DEBUG_MODE; // DRAW BOX
+DEBUG_MODE_CONTROL = true || DEBUG_MODE;
 REFERENCE_SIZE = 100;
 
 class GameObject {
@@ -30,17 +32,17 @@ class GameObject {
         this.width = width;
         this.height = height;
     }
-    draw(){
+    draw() {
         drawBox(
             this.context,
             this.x, this.y,
             this.width, this.height,
             null, "magenta", .5); // FIXME
     }
-    getLeft(margin=0) {return this.x;}
-    getRight(margin=0) {return this.x + this.width;}
-    getTop(margin=0) {return this.y;}
-    getBottom(margin=0) {return this.y + this.height;}
+    getLeft(margin = 0) { return this.x; }
+    getRight(margin = 0) { return this.x + this.width; }
+    getTop(margin = 0) { return this.y; }
+    getBottom(margin = 0) { return this.y + this.height; }
     getCenter() {
         console.error("Not implemented yet!");
         return null;
@@ -51,14 +53,32 @@ class Platform extends GameObject {
     constructor(context, x, y, width, height) {
         super(context, x, y, width, height);
         this.dead = false;
+        // FIXME INITIALIZE TRIGGERED MEMBER IF NEEDED
 
-        this.color = "black"; // FIXME
+        this.color = "white"; // FIXME
     }
-    draw(){
-        drawBox(
-            this.context, this.x, this.y, this.width, this.height, this.color); // FIXME
-            if (DEBUG_MODE) {super.draw();}
+    draw() {
+        if (!this.dead) {
+            drawBox(
+                this.context,
+                this.x, this.y, this.width, this.height,
+                this.color);   
         }
+        if (DEBUG_MODE_GRAPHIC) { super.draw(); }
+    }
+    release() {
+        this.dead = true;
+        if (false) {
+            // FIXME INITIALIZE COUNTDOWN?
+        }
+        else {
+            // FIXME DECREMENT COUNTDOWN?
+        }
+        this.color = "green";
+    }
+    trigger() {
+        this.triggered = true;
+    }
 }
 
 class MainCharacter extends GameObject {
@@ -66,12 +86,14 @@ class MainCharacter extends GameObject {
         super(context, x, y, width, height);
         this.dx = 1; // FIXME
         this.dy = 1; // FIXME
-        this.falling = true;
+    }
+    isFalling() {
+        return (this.platformUid == null);
     }
     move() {
         // FIXME DECELERATE IF NOT GROUNDED
         this.x += this.dx; // FIXME TIMES SPEED
-        if (this.falling) {
+        if (this.isFalling()) {
             this.y += this.dy;
         }
     }
@@ -91,7 +113,39 @@ class Game {
         this.character = null;
     }
     collisions() {
-        if (DEBUG_MODE) {
+        // Is character grounded on a platform?
+        // formerPlatformUid = this.character.platformUid; // FIXME DECLARE
+        this.character.platformUid = null;
+        for (let platform of this.platforms) {
+            if (platform.dead) {
+                // console.log("ignored!");
+                continue;
+            }
+            let platformTriggered = platform.triggered;
+            // FIXME METHOD A AND B HORIZONTALLY ALIGNED?
+            if (this.character.getRight() > platform.getLeft() &&
+                this.character.getLeft() < platform.getRight()) {
+                if (DEBUG_MODE_GRAPHIC) {
+                    platform.color = "cyan";
+                }
+                // FIXME METHOD A AND B HORIZONTALLY ALIGNED?
+                if (this.character.getBottom() >= platform.getTop() &&
+                    this.character.getBottom() < platform.getBottom()) {
+                    if (DEBUG_MODE_GRAPHIC) {
+                        platform.color = "blue";
+                    }
+                    // FIXME CHARACTER GROUNDED METHOD
+                    this.character.platformUid = platform.uid;
+                    platform.trigger();
+                }
+            }
+            else {platform.color = "white";}// FIXME REMOVE, USE RESET
+            if (platformTriggered &&
+                this.character.platformUid != platform.uid) {
+                platform.release();
+            }
+        }
+        if (DEBUG_MODE_CONTROL) {
             if (this.character.getRight() > REFERENCE_SIZE) {
                 this.character.turnBack();
             }
@@ -99,29 +153,24 @@ class Game {
                 this.character.turnBack();
             }
             if (this.character.getBottom() >= REFERENCE_SIZE) {
-                this.character.falling = false;
-            }
-        }
-        // Is character grounded on a platform?
-        for (let platform of this.platforms) {
-            // FIXME METHOD A AND B HORIZONTALLY ALIGNED?
-            if (this.character.getRight() > platform.getLeft() &&
-                this.character.getLeft() < platform.getRight()) {
-                platform.color = "cyan"; // FIXME REMOVE
-                // FIXME METHOD A AND B HORIZONTALLY ALIGNED?
-                if (this.character.getBottom() >= platform.getTop() &&
-                    this.character.getBottom() < platform.getBottom()) {
-                    platform.color = "blue"; // FIXME REMOVE
-                }
-            }
-            else {
-                platform.color = "black"; // FIXME REMOVE
+                this.character.platformUid = "debug_bottom"
             }
         }
     }
     draw() {
         this.context.clearRect(0, 0, this.context.canvas.clientWidth, this.context.canvas.clientHeight);
-        drawBox(this.context, 0, 0, REFERENCE_SIZE, REFERENCE_SIZE, "yellow"); // FIXME REMOVE
+
+        // -- Background
+        drawBox(
+            this.context,
+            0, 0, REFERENCE_SIZE, REFERENCE_SIZE,
+            "black"); // FIXME SWITCHABLE
+        if (DEBUG_MODE_GRAPHIC) {
+            drawBox(
+                this.context,
+                0, 0, REFERENCE_SIZE, REFERENCE_SIZE,
+                "yellow");
+        }
 
         // DRAW PLATFORMS
         for (let platform of this.platforms) {
@@ -132,30 +181,30 @@ class Game {
 
     }
     initialize() {
-        let gridWidth = 15;
+        let gridWidth = 12;
         let blockWidth = REFERENCE_SIZE / gridWidth;
-        let gridHeight = 15;
+        let gridHeight = gridWidth; // SQUARE
         let blockHeight = REFERENCE_SIZE / gridHeight;
 
         this.grid = generateGrid(gridWidth, gridHeight);
 
         // Construct platforms
         this.platforms = new Array();
-        for (let i = 0; i < gridWidth ; i++) {
+        for (let i = 0; i < gridWidth; i++) {
             for (let j = 0; j < gridHeight; j++) {
-                if (!this.grid[i][j]) {continue;}
+                if (!this.grid[i][j]) { continue; }
                 this.platforms.push(
                     new Platform(
                         this.context,
-                        i*blockWidth,
-                        j*blockHeight,
+                        i * blockWidth,
+                        j * blockHeight,
                         blockWidth,
                         blockHeight));
-           }
+            }
         }
         // Construct main character
         this.character = new MainCharacter(
-            this.context, 20, 10, 6, 6); // FIXME VALUES?
+            this.context, 20, 10, 5, 5); // FIXME VALUES?
     }
     run() {
         this.character.move();
@@ -171,8 +220,8 @@ function generateGrid(gridWidth, gridHeight) {
         this.grid[i] = new Array(gridHeight);
         for (let j = 0; j < gridHeight; j++) {
             // this.grid[i][j] = Boolean(Math.round(Math.random()-.1)); // Random grid
-            this.grid[i][j] = Boolean((j)%2); // Horizontal lines
-            if (j<3) {
+            this.grid[i][j] = Boolean((j) % 2); // Horizontal lines
+            if (j < 3) {
                 this.grid[i][j] = false;
             }
         }
