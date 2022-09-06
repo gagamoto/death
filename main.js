@@ -15,6 +15,30 @@ function drawBox(context, x, y, width, height, fillStyle = null, strokeStyle = n
     if (fillStyle) { context.fill(); }
     context.closePath();
 }
+/** Draw a circle */
+function drawCircle(context = null, x = 0, y = 0, radius = 0, fillStyle = null, strokeStyle = null, strokeWidth = 1) {
+    context.fillStyle = fillStyle;
+    context.strokeStyle = strokeStyle;
+    context.lineWidth = strokeWidth;
+
+    context.beginPath();
+    context.arc(x, y, radius, 0, Math.PI * 2, false);
+    if (strokeStyle != null) { context.stroke(); }
+    if (fillStyle != null) { context.fill(); }
+    context.closePath();
+}
+/** Draw a bottom of a circle */
+function drawBottomCircle(context = null, x = 0, y = 0, radius = 0, fillStyle = null, strokeStyle = null, strokeWidth = 1) {
+    context.fillStyle = fillStyle;
+    context.strokeStyle = strokeStyle;
+    context.lineWidth = strokeWidth;
+
+    context.beginPath();
+    context.arc(x, y, radius, 0, Math.PI, false);
+    if (strokeStyle != null) { context.stroke(); }
+    if (fillStyle != null) { context.fill(); }
+    context.closePath();
+}
 
 DEBUG_MODE = false;
 DEBUG_MODE_GRAPHIC = false || DEBUG_MODE; // DRAW BOX
@@ -62,7 +86,7 @@ class Target extends GameObject {
             this.context,
             this.x, this.y,
             this.width, this.height,
-            "red", "white", 1); // FIXME
+            ALT_RED, ALT_WHITE, .5); // FIXME
     }
 }
 class Platform extends GameObject {
@@ -97,12 +121,50 @@ class Platform extends GameObject {
         this.triggered = true;
     }
 }
-
 class MainCharacter extends GameObject {
     constructor(context, x, y, width, height) {
         super(context, x, y, width, height);
         this.dx = 0;
         this.dy = 1; // FIXME GRAVITY!
+
+        this.maxRunningSpeed = .8;
+    }
+    draw() {
+        if (false) {}
+        else { // DEFAULT STATE
+            // BODY
+            drawBox(this.context, this.x, this.y, this.width, this.height*.8, ALT_WHITE);
+            // EYES
+            let eyeHeight = this.y + this.height * .4;
+            // drawCircle
+            // -- LEFT EYE
+            drawCircle(this.context,
+                this.x + this.width / 2,
+                eyeHeight,
+                .5, ALT_BLACK, null, null);
+            // drawBox(this.context,
+            //     this.x + this.width / 2,
+            //     eyeHeight,
+            //     this.width * .1, this.height * .1, ALT_BLACK);
+            // -- RIGHT EYE
+            drawCircle(this.context,
+                this.x + this.width / 2 + this.width * .3,
+                eyeHeight,
+                .5, ALT_BLACK, null, null);
+            // drawBox(this.context,
+            //     this.x + this.width / 2 + this.width / 4,
+            //     eyeHeight,
+            //     this.width * .1, this.height * .1, ALT_BLACK);
+            // // MOUSTACHE
+            // let moustacheRadius = this.width * .15;
+            // let moustacheThickness = .3;
+            // drawBottomCircle(this.context,
+            //     this.x + this.width / 2, this.y + this.height / 2,
+            //     moustacheRadius, null, ALT_BLACK, moustacheThickness);
+            // drawBottomCircle(this.context,
+            //     this.x + this.width / 2 + 2 * moustacheRadius, this.y + this.height / 2,
+            //     moustacheRadius, null, ALT_BLACK, moustacheThickness);
+        }
     }
     isFalling() {
         return (this.platformUid == null);
@@ -197,11 +259,11 @@ class Game {
         // FIXME CONCURENCY
         if (gControls["ArrowLeft"]) {
             console.log("Left pressed!");
-            this.character.dx = -1; // FIXME
+            this.character.dx = -this.character.maxRunningSpeed; // FIXME
         }
         if (gControls["ArrowRight"]) {
             console.log("Rigth pressed!");
-            this.character.dx = 1; // FIXME
+            this.character.dx = this.character.maxRunningSpeed; // FIXME
         }
     }
     draw() {
