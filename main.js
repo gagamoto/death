@@ -197,11 +197,11 @@ class Game {
         // FIXME CONCURENCY
         if (gControls["ArrowLeft"]) {
             console.log("Left pressed!");
-            this.character.dx = -1;
+            this.character.dx = -1; // FIXME
         }
         if (gControls["ArrowRight"]) {
             console.log("Rigth pressed!");
-            this.character.dx = 1;
+            this.character.dx = 1; // FIXME
         }
     }
     draw() {
@@ -321,7 +321,8 @@ function keyUpHandler(e) {
 function touchDownHandler(e) {
     e.preventDefault();
     console.log(e);
-    if (e.changedTouches.target(0).clientX >= window.innerWidth / 2) {
+    console.log(e.changedTouches[0]);
+    if (e.changedTouches[0].clientX >= window.innerWidth / 2) {
         keyDownHandler({"key": "ArrowRight"});
     }
     else { keyDownHandler({"key": "ArrowLeft"});}
@@ -330,7 +331,7 @@ function touchDownHandler(e) {
 function touchUpHandler(e) {
     e.preventDefault();
     console.log(e);
-    if (e.changedTouches.target(0).clientX >= window.innerWidth / 2) {
+    if (e.changedTouches[0].clientX >= window.innerWidth / 2) {
         keyUpHandler({"key": "ArrowRight"});
     }
     else { keyUpHandler({"key": "ArrowLeft"});}
