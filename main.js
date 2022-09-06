@@ -85,8 +85,8 @@ class Platform extends GameObject {
 class MainCharacter extends GameObject {
     constructor(context, x, y, width, height) {
         super(context, x, y, width, height);
-        this.dx = 1; // FIXME
-        this.dy = 1; // FIXME
+        this.dx = 0;
+        this.dy = 1; // FIXME GRAVITY!
     }
     isFalling() {
         return (this.platformUid == null);
