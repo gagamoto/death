@@ -270,6 +270,24 @@ function keyUpHandler(e) {
     console.log(gControls); // FIXME REMOVE
 }
 
+function touchDownHandler(e) {
+    e.preventDefault();
+    console.log(e);
+    if (e.changedTouches.item(0).clientX >= window.innerWidth / 2) {
+        keyDownHandler({"key": "ArrowRight"});
+    }
+    else { keyDownHandler({"key": "ArrowLeft"});}
+}
+
+function touchUpHandler(e) {
+    e.preventDefault();
+    console.log(e);
+    if (e.changedTouches.item(0).clientX >= window.innerWidth / 2) {
+        keyUpHandler({"key": "ArrowRight"});
+    }
+    else { keyUpHandler({"key": "ArrowLeft"});}
+}
+
 function main() {
     console.log("Hello, Death!")
     // -- Canvas
@@ -280,8 +298,8 @@ function main() {
     // -- Control
     document.addEventListener("keydown", keyDownHandler, false);
     document.addEventListener("keyup", keyUpHandler, false);
-    // document.addEventListener("touchstart", touchDownHandler, false);
-    // document.addEventListener("touchend", touchUpDownHandler, false);
+    document.addEventListener("touchstart", touchDownHandler, false);
+    document.addEventListener("touchend", touchUpHandler, false);
     // --
     console.log("Bye, Death!")
 }
