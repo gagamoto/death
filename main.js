@@ -21,6 +21,10 @@ DEBUG_MODE_GRAPHIC = false || DEBUG_MODE; // DRAW BOX
 DEBUG_MODE_CONTROL = true || DEBUG_MODE;
 REFERENCE_SIZE = 100;
 
+ALT_BLACK = "black";
+ALT_WHITE = "white";
+ALT_RED = "red";
+
 class GameObject {
     constructor(context, x, y, width, height) {
         this.uid = String(Math.random()).substring(2); // unique identifier
@@ -48,14 +52,27 @@ class GameObject {
         return null;
     }
 }
-
+class Target extends GameObject {
+    constructor(context, x, y, width, height) {
+        super(context, x, y, width, height);
+        this.owner = null;
+    }
+    draw() {
+        drawBox(
+            this.context,
+            this.x, this.y,
+            this.width, this.height,
+            "red", "white", 1); // FIXME
+    }
+}
 class Platform extends GameObject {
     constructor(context, x, y, width, height) {
         super(context, x, y, width, height);
         this.dead = false;
         // FIXME INITIALIZE TRIGGERED MEMBER IF NEEDED
 
-        this.color = "white"; // FIXME
+        this.color = ALT_WHITE; // FIXME
+        this.borderColor = ALT_BLACK; // FIXME
     }
     draw() {
         if (!this.dead) {
@@ -63,7 +80,7 @@ class Platform extends GameObject {
                 this.context,
                 this.x, this.y, this.width, this.height,
                 this.color,
-                "black", .5); // FIXME   
+                this.borderColor, .5); // FIXME
         }
         if (DEBUG_MODE_GRAPHIC) { super.draw(); }
     }
@@ -75,7 +92,6 @@ class Platform extends GameObject {
         else {
             // FIXME DECREMENT COUNTDOWN?
         }
-        this.color = "green";
     }
     trigger() {
         this.triggered = true;
@@ -111,7 +127,13 @@ class Game {
         this.context.scale(factor, factor);
 
         this.grid = null;
+        this.gridWidth = 12;
+        this.blockWidth = REFERENCE_SIZE / this.gridWidth; // Platforms
+        this.gridHeight = this.gridWidth; // Square
+        this.blockHeight = REFERENCE_SIZE / this.gridHeight;
+
         this.character = null;
+        this.target = null;
     }
     collisions() {
         // Is character grounded on a platform?
@@ -127,13 +149,13 @@ class Game {
             if (this.character.getRight() > platform.getLeft() &&
                 this.character.getLeft() < platform.getRight()) {
                 if (DEBUG_MODE_GRAPHIC) {
-                    platform.color = "cyan";
+                    platform.borderColor = "cyan";
                 }
-                // FIXME METHOD A AND B HORIZONTALLY ALIGNED?
+                // FIXME METHOD A AND B VERTICALLY ALIGNED?
                 if (this.character.getBottom() >= platform.getTop() &&
                     this.character.getBottom() < platform.getBottom()) {
                     if (DEBUG_MODE_GRAPHIC) {
-                        platform.color = "blue";
+                        platform.borderColor = "blue";
                     }
                     // FIXME CHARACTER GROUNDED METHOD
                     this.character.platformUid = platform.uid;
@@ -141,12 +163,23 @@ class Game {
                     platform.trigger();
                 }
             }
-            else {platform.color = "white";}// FIXME REMOVE, USE RESET
+            // FIXME REMOVE, USE RESET
+            else if (DEBUG_MODE_GRAPHIC) {platform.borderColor = "magenta";}
             if (platformTriggered &&
                 this.character.platformUid != platform.uid) {
                 platform.release();
             }
         }
+        // Is character within the target?
+        // FIXME JUST TOUCH, GO INSIDE, OR GO THROUGH?
+        // FIXME MARGIN
+        if (this.character.getRight() > this.target.getLeft() &&
+            this.character.getLeft() < this.target.getRight() &&
+            this.character.getBottom() <= this.target.getBottom() &&
+            this.character.getTop() > this.target.getTop()) {
+                this.toggleGame();
+        }
+
         if (DEBUG_MODE_CONTROL) {
             if (this.character.getRight() > REFERENCE_SIZE) {
                 this.character.turnBack();
@@ -190,14 +223,19 @@ class Game {
         for (let platform of this.platforms) {
             platform.draw();
         }
+        // DRAW ITEM
+        this.target.draw();
         // DRAW MAIN CHARACTER
         this.character.draw();
     }
     initialize() {
-        let gridWidth = 12;
-        let blockWidth = REFERENCE_SIZE / gridWidth;
-        let gridHeight = gridWidth; // SQUARE
-        let blockHeight = REFERENCE_SIZE / gridHeight;
+        this.toggled = false;
+
+        // FIXME REMOVE LOCAL VAR BELOW
+        let gridWidth = this.gridWidth;
+        let blockWidth = this.blockWidth;
+        let gridHeight = this.gridHeight;
+        let blockHeight = this.blockHeight;
 
         this.grid = generateGrid(gridWidth, gridHeight);
 
@@ -218,6 +256,12 @@ class Game {
         // Construct main character
         this.character = new MainCharacter(
             this.context, 20, 10, 5, 5); // FIXME VALUES?
+
+        // Set item
+        this.target = new Target(
+            this.context,
+            3*this.blockWidth, 8*this.blockHeight,
+            this.blockWidth, this.blockHeight);
     }
     run() {
         this.control();
@@ -225,6 +269,10 @@ class Game {
         this.character.move();
         this.draw();
         requestAnimationFrame(() => this.run());
+    }
+    toggleGame() {
+        console.debug("Enter Death!");
+        this.character.dx = 0;
     }
     // FIXME MAKE CONTROLLER CLASS
 }
@@ -273,7 +321,7 @@ function keyUpHandler(e) {
 function touchDownHandler(e) {
     e.preventDefault();
     console.log(e);
-    if (e.changedTouches.item(0).clientX >= window.innerWidth / 2) {
+    if (e.changedTouches.target(0).clientX >= window.innerWidth / 2) {
         keyDownHandler({"key": "ArrowRight"});
     }
     else { keyDownHandler({"key": "ArrowLeft"});}
@@ -282,7 +330,7 @@ function touchDownHandler(e) {
 function touchUpHandler(e) {
     e.preventDefault();
     console.log(e);
-    if (e.changedTouches.item(0).clientX >= window.innerWidth / 2) {
+    if (e.changedTouches.target(0).clientX >= window.innerWidth / 2) {
         keyUpHandler({"key": "ArrowRight"});
     }
     else { keyUpHandler({"key": "ArrowLeft"});}
