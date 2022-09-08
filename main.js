@@ -282,6 +282,12 @@ class Game {
         this.context.textAlign = "center";
         this.context.fillText("LEVEL "+ this.level, REFERENCE_SIZE / 2, REFERENCE_SIZE * .2);
     }
+    drawVersion() {
+        this.context.font = "4px Times";
+        this.context.fillStyle = ALT_RED;
+        this.context.textAlign = "left";
+        this.context.fillText("version 0.a ", 0, 4);
+    }
     draw() {
         this.context.clearRect(0, 0, this.context.canvas.clientWidth, this.context.canvas.clientHeight);
 
@@ -309,6 +315,34 @@ class Game {
             this.state == GAME_STATE.INITIALIZED) {
             this.drawLevel();
         }
+        this.drawVersion() // FIXME REMOVE
+    }
+    generateGrid() {
+        let grid = new Array(this.gridWidth);
+        for (let i = 0; i < this.gridWidth; i++) {
+            grid[i] = new Array(this.gridHeight);
+            for (let j = 0; j < this.gridHeight; j++) {
+                if (this.level == 1) {
+                    // -- LEVEL 1
+                    // FIXME PSEUDO READ GRID
+                    grid[i][j] = Boolean((j) % 2);
+                    if (j < 3) {
+                        grid[i][j] = false;
+                    }
+                }
+                else {
+                    grid[i][j] = Boolean((j) % 2);
+                    if (grid[i][j] == true) {
+                        grid[i][j] = Boolean(Math.round(Math.random() - this.level/100)); // Random grid
+                    }
+                    if (j < 3) {
+                        grid[i][j] = false;
+                    }
+                }
+            }
+        }
+        console.debug(grid);
+        this.grid = grid;
     }
     initialize() {
         if (this.level == null) {
@@ -316,7 +350,7 @@ class Game {
         } else {this.level += 1;}
 
         console.log("Level "+ this.level); // FIXME DEBUG
-        this.grid = generateGrid(this.gridWidth, this.gridHeight);
+        this.generateGrid(this.gridWidth, this.gridHeight);
 
         // Construct platforms
         this.platforms = new Array();
@@ -363,22 +397,6 @@ class Game {
         this.setState(GAME_STATE.INITIALIZATION);
     }
     // FIXME MAKE CONTROLLER CLASS
-}
-
-function generateGrid(gridWidth, gridHeight) {
-    grid = new Array(gridWidth);
-    for (let i = 0; i < gridWidth; i++) {
-        this.grid[i] = new Array(gridHeight);
-        for (let j = 0; j < gridHeight; j++) {
-            // this.grid[i][j] = Boolean(Math.round(Math.random()-.1)); // Random grid
-            this.grid[i][j] = Boolean((j) % 2); // Horizontal lines
-            if (j < 3) {
-                this.grid[i][j] = false;
-            }
-        }
-    }
-    console.debug(grid);
-    return grid;
 }
 
 function initializeCanvas() {
