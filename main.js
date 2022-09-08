@@ -180,7 +180,12 @@ class MainCharacter extends GameObject {
         this.dx = -this.dx;
     }
 }
-
+const GAME_STATE = { // USEFUL KEYS, IGNORE VALUES.
+    INITIALIZATION: "INITIALIZATION",
+    INITIALIZED: "INITIALIZED",
+    PLAYING: "PLAYING",
+    DEFAULT: "DEFAULT"
+};
 class Game {
     constructor(canvas) {
         this.canvas = canvas;
@@ -188,6 +193,8 @@ class Game {
         let factor = this.canvas.width / REFERENCE_SIZE;
         this.context.scale(factor, factor);
 
+        this.state = GAME_STATE.INITIALIZATION;
+        this.level = null;
         this.grid = null;
         this.gridWidth = 12;
         this.blockWidth = REFERENCE_SIZE / this.gridWidth; // Platforms
@@ -242,7 +249,7 @@ class Game {
                 this.toggleGame();
         }
 
-        if (DEBUG_MODE_CONTROL) {
+        if (DEBUG_MODE_CONTROL == true) {
             if (this.character.getRight() > REFERENCE_SIZE) {
                 this.character.turnBack();
             }
@@ -265,6 +272,12 @@ class Game {
             console.log("Rigth pressed!");
             this.character.dx = this.character.maxRunningSpeed; // FIXME
         }
+    }
+    drawLevel() {
+        this.context.font = "6px Arial";
+        this.context.fillStyle = ALT_WHITE;
+        this.context.textAlign = "center";
+        this.context.fillText("LEVEL "+ this.level, REFERENCE_SIZE / 2, REFERENCE_SIZE * .2);
     }
     draw() {
         this.context.clearRect(0, 0, this.context.canvas.clientWidth, this.context.canvas.clientHeight);
@@ -289,30 +302,31 @@ class Game {
         this.target.draw();
         // DRAW MAIN CHARACTER
         this.character.draw();
+        if (this.state == GAME_STATE.INITIALIZATION ||
+            this.state == GAME_STATE.INITIALIZED) {
+            this.drawLevel();
+        }
     }
     initialize() {
-        this.toggled = false;
+        if (this.level == null) {
+            this.level = 1;
+        } else {this.level += 1;}
 
-        // FIXME REMOVE LOCAL VAR BELOW
-        let gridWidth = this.gridWidth;
-        let blockWidth = this.blockWidth;
-        let gridHeight = this.gridHeight;
-        let blockHeight = this.blockHeight;
-
-        this.grid = generateGrid(gridWidth, gridHeight);
+        console.log("Level "+ this.level); // FIXME DEBUG
+        this.grid = generateGrid(this.gridWidth, this.gridHeight);
 
         // Construct platforms
         this.platforms = new Array();
-        for (let i = 0; i < gridWidth; i++) {
-            for (let j = 0; j < gridHeight; j++) {
+        for (let i = 0; i < this.gridWidth; i++) {
+            for (let j = 0; j < this.gridHeight; j++) {
                 if (!this.grid[i][j]) { continue; }
                 this.platforms.push(
                     new Platform(
                         this.context,
-                        i * blockWidth,
-                        j * blockHeight,
-                        blockWidth,
-                        blockHeight));
+                        i * this.blockWidth,
+                        j * this.blockHeight,
+                        this.blockWidth,
+                        this.blockHeight));
             }
         }
         // Construct main character
@@ -324,17 +338,25 @@ class Game {
             this.context,
             3*this.blockWidth, 8*this.blockHeight,
             this.blockWidth, this.blockHeight);
+        this.setState(GAME_STATE.INITIALIZED)
     }
     run() {
-        this.control();
+        if (this.state == GAME_STATE.INITIALIZATION) {
+            console.log("Hello! Initialize!"); // FIXME REMOVE
+            this.initialize();
+        }
         this.collisions();
         this.character.move();
+        this.control();
         this.draw();
         requestAnimationFrame(() => this.run());
     }
+    setState(state) {
+        this.state = state;
+    }
     toggleGame() {
         console.debug("Enter Death!");
-        this.character.dx = 0;
+        this.setState(GAME_STATE.INITIALIZATION);
     }
     // FIXME MAKE CONTROLLER CLASS
 }
@@ -404,7 +426,6 @@ function main() {
     // -- Canvas
     myCanvas = initializeCanvas();
     let game = new Game(myCanvas);
-    game.initialize();
     game.run();
     // -- Control
     document.addEventListener("keydown", keyDownHandler, false);
