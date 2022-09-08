@@ -67,14 +67,11 @@ class GameObject {
             this.width, this.height,
             null, "magenta", .5); // FIXME
     }
-    getLeft(margin = 0) { return this.x; }
-    getRight(margin = 0) { return this.x + this.width; }
-    getTop(margin = 0) { return this.y; }
-    getBottom(margin = 0) { return this.y + this.height; }
-    getCenter() {
-        console.error("Not implemented yet!");
-        return null;
-    }
+    getLeft() { return this.x; }
+    getRight() { return this.x + this.width; }
+    getTop() { return this.y; }
+    getBottom() { return this.y + this.height; }
+    getCenter() { return this.x + this.width / 2; }
 }
 class Target extends GameObject {
     constructor(context, x, y, width, height) {
@@ -224,8 +221,8 @@ class Game {
             }
             let platformTriggered = platform.triggered;
             // FIXME METHOD A AND B HORIZONTALLY ALIGNED?
-            if (this.character.getRight() > platform.getLeft() &&
-                this.character.getLeft() < platform.getRight()) {
+            if (this.character.getCenter() > platform.getLeft() &&
+                this.character.getCenter() < platform.getRight()) {
                 if (DEBUG_MODE_GRAPHIC) {
                     platform.borderColor = "cyan";
                 }
