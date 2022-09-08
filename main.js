@@ -82,11 +82,20 @@ class Target extends GameObject {
         this.owner = null;
     }
     draw() {
-        drawBox(
-            this.context,
-            this.x, this.y,
-            this.width, this.height,
-            ALT_RED, ALT_WHITE, .5); // FIXME
+        let margin = this.width * .1;
+        let thickness = this.width / 4;
+        drawCircle(this.context,
+            this.x + this.width / 2,
+            this.y + this.height / 2,
+            this.width / 2 - thickness / 2 - margin,
+            null, ALT_WHITE, thickness);
+        drawCircle(this.context,
+            this.x + this.width / 2,
+            this.y + this.height / 2,
+            this.width / 2 - thickness / 2 - margin,
+            null, ALT_RED, thickness * .8);
+        if (DEBUG_MODE_GRAPHIC) { super.draw(); }
+
     }
 }
 class Platform extends GameObject {
