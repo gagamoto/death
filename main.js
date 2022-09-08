@@ -246,7 +246,7 @@ class Game {
             this.character.getLeft() < this.target.getRight() &&
             this.character.getBottom() <= this.target.getBottom() &&
             this.character.getTop() > this.target.getTop()) {
-                this.toggleGame();
+                this.endGameCycle();
         }
 
         if (DEBUG_MODE_CONTROL == true) {
@@ -262,14 +262,17 @@ class Game {
             }
         }
     }
+    cancelControls() {for (const key in gControls) {delete gControls[key];}}
     control() {
         // FIXME CONCURENCY
-        if (gControls["ArrowLeft"]) {
+        if (gControls["ArrowLeft"] == true) {
             console.log("Left pressed!");
+            if (this.state == GAME_STATE.INITIALIZED) {this.setState(GAME_STATE.PLAYING);}
             this.character.dx = -this.character.maxRunningSpeed; // FIXME
         }
-        if (gControls["ArrowRight"]) {
+        if (gControls["ArrowRight"] == true) {
             console.log("Rigth pressed!");
+            if (this.state == GAME_STATE.INITIALIZED) {this.setState(GAME_STATE.PLAYING);}
             this.character.dx = this.character.maxRunningSpeed; // FIXME
         }
     }
@@ -354,8 +357,9 @@ class Game {
     setState(state) {
         this.state = state;
     }
-    toggleGame() {
+    endGameCycle() {
         console.debug("Enter Death!");
+        this.cancelControls(); // FIXME
         this.setState(GAME_STATE.INITIALIZATION);
     }
     // FIXME MAKE CONTROLLER CLASS
@@ -391,15 +395,13 @@ function initializeCanvas() {
 gControls = new Object(); // FIXME NOT GLOBAL
 
 function keyDownHandler(e) {
-    console.log("Key down: " + e.key);
+    console.debug("Key down: " + e.key);
     gControls[e.key] = true;
-    console.log(gControls); // FIXME REMOVE
 }
 
 function keyUpHandler(e) {
-    console.log("Key up: " + e.key);
+    console.debug("Key up: " + e.key);
     gControls[e.key] = false;
-    console.log(gControls); // FIXME REMOVE
 }
 
 function touchDownHandler(e) {
