@@ -59,6 +59,8 @@ class GameObject {
         this.y = y;
         this.width = width;
         this.height = height;
+
+        this.bounceCount = null;
     }
     draw() {
         drawBox(
@@ -76,19 +78,25 @@ class GameObject {
 class Target extends GameObject {
     constructor(context, x, y, width, height) {
         super(context, x, y, width, height);
+        this.bounceCount = 0;
         this.owner = null;
     }
     draw() {
+        const MAX_BOUNCE_FRAMES = 60;
+        this.bounceCount++ ;
+        this.bounceCount = this.bounceCount%MAX_BOUNCE_FRAMES;
+        let bounce = this.bounceCount/MAX_BOUNCE_FRAMES;
+        console.log(this.bounceCount );
         let margin = this.width * .1;
         let thickness = this.width / 4;
         drawCircle(this.context,
             this.x + this.width / 2,
-            this.y + this.height / 2,
+            this.y + this.height / 2 + Math.sin(bounce*Math.PI*2) * .5,
             this.width / 2 - thickness / 2 - margin,
             null, ALT_WHITE, thickness);
         drawCircle(this.context,
             this.x + this.width / 2,
-            this.y + this.height / 2,
+            this.y + this.height / 2 + Math.sin(bounce*Math.PI*2) * .5,
             this.width / 2 - thickness / 2 - margin,
             null, ALT_RED, thickness * .8);
         if (DEBUG_MODE_GRAPHIC) { super.draw(); }
@@ -98,7 +106,6 @@ class Target extends GameObject {
 class Platform extends GameObject {
     constructor(context, x, y, width, height) {
         super(context, x, y, width, height);
-        this.bounceCount = null;
         this.dead = false;
         // FIXME INITIALIZE TRIGGERED MEMBER
         this.color = ALT_WHITE;
@@ -306,7 +313,7 @@ class Game {
         this.context.font = "4px Times";
         this.context.fillStyle = ALT_RED;
         this.context.textAlign = "left";
-        this.context.fillText("version 0.a ", 0, 4);
+        this.context.fillText("version 0.b (sept. 8 22:57) ", 0, 4);
     }
     draw() {
         this.context.clearRect(0, 0, this.context.canvas.clientWidth, this.context.canvas.clientHeight);
