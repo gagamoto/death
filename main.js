@@ -98,19 +98,32 @@ class Target extends GameObject {
 class Platform extends GameObject {
     constructor(context, x, y, width, height) {
         super(context, x, y, width, height);
+        this.bounceCount = null;
         this.dead = false;
-        // FIXME INITIALIZE TRIGGERED MEMBER IF NEEDED
-
-        this.color = ALT_WHITE; // FIXME
-        this.borderColor = ALT_BLACK; // FIXME
+        // FIXME INITIALIZE TRIGGERED MEMBER
+        this.color = ALT_WHITE;
+        this.borderColor = null;
+    }
+    bounce() {
+        const MAX_BOUNCE_FRAMES = 10;
+        if (this.bounceCount == null) {this.bounceCount = 0;}
+        if (this.bounceCount < 1) {
+            this.bounceCount += 1 / MAX_BOUNCE_FRAMES;
+        } else {this.bounceCount = 1;} // MAX
     }
     draw() {
+        let thickness = .3;
+        let bounce = 0;
+        if (this.bounceCount != null) {
+            bounce = Math.sin(this.bounceCount*Math.PI) * .5;
+        }
         if (!this.dead) {
             drawBox(
                 this.context,
-                this.x, this.y, this.width, this.height,
-                this.color,
-                this.borderColor, .5); // FIXME
+                this.x + thickness,
+                this.y + thickness + bounce,
+                this.width - thickness*2, this.height - thickness*2,
+                this.color);
         }
         if (DEBUG_MODE_GRAPHIC) { super.draw(); }
     }
@@ -234,6 +247,7 @@ class Game {
                     }
                     // FIXME CHARACTER GROUNDED METHOD
                     this.character.platformUid = platform.uid;
+                    platform.bounce();
                     this.character.y = platform.getTop() - this.character.height;
                     platform.trigger();
                 }
