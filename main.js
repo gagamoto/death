@@ -188,8 +188,7 @@ class Platform extends GameObject {
                     this.x + this.width / 2,
                     this.y + this.height / 2,
                     size,
-                    null, this.borderColor, thickness);
-
+                    null, ALT_RED, thickness);
         }
     }
     release() {
@@ -444,7 +443,7 @@ class Game {
                     // FIXME IMMORTAL
                     grid[i][j] = GAME_ELEMENTS.PLATFORM; // FULL WALLS
                 }
-                else if (j > 1) {
+                else if (j >= 2) { // LEAVE 2 LINES
                     grid[i][j] = GAME_ELEMENTS.PLATFORM; // FLOOR
                 }
                 else {
@@ -452,7 +451,17 @@ class Game {
                 }
             }
         }
-        grid[3][0] = GAME_ELEMENTS.MAINCHARACTER;
+        const MARGIN_FOR_WALLS = 1;
+        let characterHorizontalPosition = MARGIN_FOR_WALLS + Math.floor(
+            Math.random()*(this.gridWidth-MARGIN_FOR_WALLS*2));
+        grid[characterHorizontalPosition][0] = GAME_ELEMENTS.MAINCHARACTER;
+
+        let targetHorizontalPosition = 1 + Math.floor(
+            Math.random()*(this.gridWidth-2));
+        const MIN_VERTICAL_POSITION = 4;
+        let targetVerticalPosition = MIN_VERTICAL_POSITION + Math.floor(
+            Math.random()*(this.gridHeight-MARGIN_FOR_WALLS));
+        grid[targetHorizontalPosition][targetVerticalPosition] = GAME_ELEMENTS.TARGET;
                 // // FIXME PSEUDO READ GRID
                 // // -- LEVEL BASE
                 // if (i == 0 || i == this.gridWidth-1) {
@@ -487,6 +496,13 @@ class Game {
                         j * this.blockHeight,
                         6, 6);
                 }
+                else if (this.grid[i][j] == GAME_ELEMENTS.TARGET) {
+                    // Set target
+                    this.target = new Target(
+                        this.context,
+                        i*this.blockWidth, j*this.blockHeight,
+                        this.blockWidth, this.blockHeight);
+                }
                 else if (this.grid[i][j] == GAME_ELEMENTS.PLATFORM) {
                     this.platforms.push(
                         new Platform(
@@ -503,12 +519,6 @@ class Game {
                 }
             }
         }
-
-        // Set item
-        this.target = new Target(
-            this.context,
-            3*this.blockWidth, 8*this.blockHeight,
-            this.blockWidth, this.blockHeight);
         this.setState(GAME_STATE.INITIALIZED)
     }
     run() {
