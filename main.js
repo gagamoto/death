@@ -87,6 +87,7 @@ const SOUND_POP = [5.25,,378,,.02,.02,3,2.6,,,-338,,,,120,,,.78,.01,.05];
 const SOUND_NOPE = [.5,,37,,.05,.08,3,.92,,.1,,-0.01,.08,,-1,,.24,.97,.05]; // Shoot 199 - Mutation 2
 const SOUND_HELL = [1.6,1,578,.06,.11,.43,4,3.92,.5,,50,.01,.14,.1,1,.3,.37,.47,.08,.39]; // Explosion 207 - Mutation 4
 const SOUND_IMMORTAL = [,1,642,.01,.07,.16,,1.96,-8.1,-4.1,,,,,,,,.92,.05]; // Jump 220
+const SOUND_BAM = [1.01,1,492,.07,.13,.26,1,1.66,3.7,,-6,.1,.15,,15,.1,,.91,.23]; // Powerup 235
 
 class GameObject {
     constructor(context, x, y, width, height) {
@@ -198,6 +199,7 @@ class Platform extends GameObject {
     }
     trigger() {
         this.triggered = true;
+        this.bounce();
     }
 }
 class ImmortalPlatform extends Platform {
@@ -212,6 +214,13 @@ class ImmortalPlatform extends Platform {
             zzfx(...SOUND_IMMORTAL);
             this.triggered = true;
         }
+    }
+}
+class MortalPlatform extends Platform {
+    constructor(context, x, y, width, height) {
+        super(context, x, y, width, height);
+        this.color = ALT_RED;
+        this.mortal = true;
     }
 }
 let ANIMATIONS = {
@@ -334,6 +343,7 @@ const GAME_ELEMENTS = { // USEFUL KEYS, IGNORE VALUES.
     MAINCHARACTER: "MAINCHARACTER",
     PLATFORM: "PLATFORM",
     IMMORTALPLATFORM: "IMMORTALPLATFORM",
+    MORTALPLATFORM: "MORTALPLATFORM",
     TARGET: "TARGET",
     DEFAULT: "DEFAULT"
 };
@@ -372,11 +382,9 @@ class Game {
                 // -- Horizontally aligned
                 if (this.character.getBottom() >= platform.getTop() &&
                     this.character.getBottom() < platform.getBottom()) {
-
-                    this.character.platformUid = platform.uid;
-                    platform.bounce();
-                    this.character.y = platform.getTop() - this.character.height;
                     platform.trigger();
+                    this.character.platformUid = platform.uid;
+                    this.character.y = platform.getTop() - this.character.height;
                 }
             }
 
@@ -461,6 +469,17 @@ class Game {
         }
 
         let numLevelCompleted = this.level - 1;
+        // Randomly sprinkle mortals!
+        const MAX_MORTAL_PLATFORMS = this.gridWidth;
+        let numberMortalsToSet = 0; // (numLevelCompleted % MAX_MORTAL_PLATFORMS);
+        while (numberMortalsToSet-- > 0) {
+            let mortalHorizontalPosition = MARGIN_FOR_WALLS + Math.floor(
+                Math.random()*(this.gridWidth-MARGIN_FOR_WALLS*2));
+            let mortalVerticalPosition = MIN_VERTICAL_POSITION + Math.floor(
+                Math.random()*(this.gridHeight-MIN_VERTICAL_POSITION));
+            grid[mortalHorizontalPosition][mortalVerticalPosition] = GAME_ELEMENTS.MORTALPLATFORM;
+        }
+
         // Randomly sprinkle immortals!
         const MAX_IMMORTAL_PLATFORMS = this.gridWidth;
         let numberImmortalsToSet = (numLevelCompleted * 2 % MAX_IMMORTAL_PLATFORMS);
@@ -542,6 +561,13 @@ class Game {
                             this.context, i * this.blockWidth, j * this.blockHeight,
                             this.blockWidth,this.blockHeight));
                 }
+                else if (this.grid[i][j] == GAME_ELEMENTS.MORTALPLATFORM) {
+                    this.platforms.push(
+                        new MortalPlatform(
+                            this.context, i * this.blockWidth, j * this.blockHeight,
+                            this.blockWidth,this.blockHeight));
+                }
+                
             }
         }
         this.setState(GAME_STATE.INITIALIZED)
