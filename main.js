@@ -72,8 +72,9 @@ let ALT_BLACK = "black";
 let ALT_WHITE = "white";
 let ALT_RED = "red";
 
-let SOUND_TARGET = [2.03,1,319,.03,.28,.48,1,.61,,.4,-233,.05,.11,.1,,,.07,.59,.16,.43]; // Powerup 186
+let SOUND_TARGET = [1.5,1,319,.03,.28,.48,1,.61,,.4,-233,.05,.11,.1,,,.07,.59,.16,.43]; // Powerup 186
 let SOUND_POP = [5.25,,378,,.02,.02,3,2.6,,,-338,,,,120,,,.78,.01,.05];
+let SOUND_NOPE = [.5,,37,,.05,.08,3,.92,,.1,,-0.01,.08,,-1,,.24,.97,.05]; // Shoot 199 - Mutation 2
 
 class GameObject {
     constructor(context, x, y, width, height) {
@@ -100,6 +101,16 @@ class GameObject {
     getTop() { return this.y; }
     getBottom() { return this.y + this.height; }
     getCenter() { return this.x + this.width / 2; }
+    getMiddle() { return this.y + this.height / 2; }
+    centerIsAlignedTo(anotherGameObject) {
+        return this.getCenter() > anotherGameObject.getLeft() && this.getCenter() < anotherGameObject.getRight();
+    }
+    middleIsAlignedTo(anotherGameObject) {
+        return this.getMiddle() > anotherGameObject.getTop() && this.getMiddle() < anotherGameObject.getBottom();
+    }
+    isAlignedto(anotherGameObject) {
+        return this.centerIsAlignedTo(anotherGameObject) && this.middleIsAlignedTo(anotherGameObject);
+    }
 }
 class Target extends GameObject {
     constructor(context, x, y, width, height) {
@@ -242,6 +253,17 @@ class MainCharacter extends GameObject {
     turnBack() {
         this.dx = -this.dx;
     }
+    crashInPlatform(platform) {
+        zzfx(...SOUND_NOPE);
+        // FIXME PUSHED BACK BUT DOES NOT CHANGE DIRECTION?
+        if (this.dx > 0) {
+            this.resetCenter(platform.getLeft());
+        } else if (this.dx < 0) {
+            this.resetCenter(platform.getRight());
+        }
+        this.turnBack();
+    }
+    resetCenter(x) {this.x = x - Math.ceil(this.width / 2);}
 }
 const GAME_STATE = { // USEFUL KEYS, IGNORE VALUES.
     INITIALIZATION: "INITIALIZATION",
@@ -268,36 +290,31 @@ class Game {
         this.target = null;
     }
     collisions() {
-        // Is character grounded on a platform?
-        // formerPlatformUid = this.character.platformUid; // FIXME DECLARE
+        // Collisions between character adn platforms!
         this.character.platformUid = null;
         for (let platform of this.platforms) {
             if (platform.dead) {
-                // console.log("ignored!");
                 continue;
             }
             let platformTriggered = platform.triggered;
-            // FIXME METHOD A AND B HORIZONTALLY ALIGNED?
+
+            // Is character running in the platform?
+            if (this.character.isAlignedto(platform)) { this.character.crashInPlatform(platform); }
+
+            // Is character grounded on a platform?
             if (this.character.getCenter() > platform.getLeft() &&
                 this.character.getCenter() < platform.getRight()) {
-                if (DEBUG_MODE_GRAPHIC) {
-                    platform.borderColor = "cyan";
-                }
-                // FIXME METHOD A AND B VERTICALLY ALIGNED?
+                // -- Horizontally aligned
                 if (this.character.getBottom() >= platform.getTop() &&
                     this.character.getBottom() < platform.getBottom()) {
-                    if (DEBUG_MODE_GRAPHIC) {
-                        platform.borderColor = "blue";
-                    }
-                    // FIXME CHARACTER GROUNDED METHOD
+
                     this.character.platformUid = platform.uid;
                     platform.bounce();
                     this.character.y = platform.getTop() - this.character.height;
                     platform.trigger();
                 }
             }
-            // FIXME REMOVE, USE RESET
-            else if (DEBUG_MODE_GRAPHIC) {platform.borderColor = "magenta";}
+
             if (platformTriggered &&
                 this.character.platformUid != platform.uid) {
                 platform.release();
