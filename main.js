@@ -81,6 +81,14 @@ const ALT_WHITE = "white";
 const ALT_RED = "red";
 const ALT_YELLOW = "yellow";
 const ALT_BLUE = "blue";
+// POINPY COLORS
+const COLOR_LEAVES = "rgb(32, 245, 159)";
+const COLOR_SKY = "rgb(221, 243, 35)";
+const COLOR_TRUNKS = "rgb(84, 230, 159)";
+const COLOR_CAT = "rgb(37, 140, 243)";
+const COLOR_BORDERS = "#2B333C";
+const COLOR_BODY = "#45DE72";
+const COLOR_LEGS = "#F7D400";
 
 const SOUND_TARGET = [1.5,1,319,.03,.28,.48,1,.61,,.4,-233,.05,.11,.1,,,.07,.59,.16,.43]; // Powerup 186
 const SOUND_POP = [5.25,,378,,.02,.02,3,2.6,,,-338,,,,120,,,.78,.01,.05];
@@ -136,7 +144,7 @@ class Target extends GameObject {
         this.bounceCount++ ;
         this.bounceCount = this.bounceCount%MAX_BOUNCE_FRAMES;
         let bounce = this.bounceCount/MAX_BOUNCE_FRAMES;
-        let margin = this.width * .1;
+        let margin = this.width * .15;
         let thickness = this.width / 4;
         drawCircle(this.context,
             this.x + this.width / 2,
@@ -155,8 +163,8 @@ class Platform extends GameObject {
         super(context, x, y, width, height);
         this.dead = false;
         // FIXME INITIALIZE TRIGGERED MEMBER
-        this.color = ALT_BLACK;
-        this.borderColor = ALT_WHITE;
+        this.color = COLOR_CAT;
+        this.borderColor = COLOR_BORDERS;
         this.MAX_POP_FRAMES = 20;
     }
     bounce() {
@@ -167,7 +175,7 @@ class Platform extends GameObject {
         } else {this.bounceCount = 1;} // MAX
     }
     draw() {
-        let thickness = this.width * .1;
+        let thickness = this.width * .05;
         let bounce = 0;
         if (this.bounceCount != null) {
             bounce = Math.sin(this.bounceCount*Math.PI) * .5;
@@ -247,6 +255,7 @@ class MainCharacter extends GameObject {
         } else if (this.dx < 0) {
             this.animation = ANIMATIONS.RUNNING_LEFT;
         }
+        // FIXME ADD BOUNCE IN IDLE BODY
         // IDLE VALUES
         let legThickness = this.width * .15;
         let bodyHeight = this.height * .8;
@@ -288,24 +297,25 @@ class MainCharacter extends GameObject {
             yrightHeel = yrightHeel - Math.cos(this.animation_step*Math.PI) * hipSpace /4 - hipSpace/8;
         }
 
+        let strokeWidth = this.width * .1;
+        // LEGS
+        drawLine(this.context, xleftHip, yleftHip, xleftHeel, yleftHeel, COLOR_LEGS, legThickness);
+        drawLine(this.context, xrightHip, yrightHip, xrightHeel, yrightHeel, COLOR_LEGS, legThickness);
         // BODY
         drawBox(
             this.context,
-            this.x + xMargin / 2, this.y + Math.sin(.1*this.animation_step*Math.PI),
+            this.x + xMargin / 2, this.y,
             bodyWidth, bodyHeight,
-            ALT_WHITE, null, null); // FIXME
+            COLOR_BODY, COLOR_BORDERS, strokeWidth);
         // EYE
         drawCircle(
             this.context, eyeCenter, eyeMiddle,
             eyeRadius,
-            ALT_WHITE, ALT_BLACK, .3);
+            ALT_WHITE, COLOR_BORDERS, .3);
         drawCircle(
             this.context, pupilCenter, eyeMiddle,
             eyeRadius / 2,
-            ALT_BLACK, null, null);
-        // LEGS
-        drawLine(this.context, xleftHip, yleftHip, xleftHeel, yleftHeel, ALT_WHITE, legThickness);
-        drawLine(this.context, xrightHip, yrightHip, xrightHeel, yrightHeel, ALT_WHITE, legThickness);
+            COLOR_BORDERS, null, null);
     }
     isFalling() {
         return (this.platformUid == null);
@@ -433,14 +443,29 @@ class Game {
         this.context.textAlign = "left";
         this.context.fillText("version 0.d (sept. 10 18:31) ", 0, 4);
     }
+    animateBackGround() {
+        const MAX_TRUNKS = 2;
+        // -- Draw sky
+        drawBox(
+            this.context, 0, 0, REFERENCE_SIZE, REFERENCE_SIZE, COLOR_TRUNKS); // FIXME SWITCHABLE
+        // -- Draw a leaf
+        if (this.leaf == undefined) {
+            this.leaf = {
+                "x": 0, "y": 0,
+                "radius": REFERENCE_SIZE / 2};
+        }
+        else {
+            this.leaf.x = (this.leaf.x + 0.01) % REFERENCE_SIZE;
+            this.leaf.y = (this.leaf.y + 0.01) % REFERENCE_SIZE;
+        }
+        drawCircle(this.context, this.leaf.x, this.leaf.y, this.leaf.radius, COLOR_LEAVES); // FIXME FLOATING
+        drawCircle(this.context, this.leaf.x-REFERENCE_SIZE, this.leaf.y, this.leaf.radius, COLOR_LEAVES); // FIXME FLOATING
+    }
     draw() {
         this.context.clearRect(0, 0, this.context.canvas.clientWidth, this.context.canvas.clientHeight);
 
         // -- Background
-        drawBox(
-            this.context,
-            0, 0, REFERENCE_SIZE, REFERENCE_SIZE,
-            "black"); // FIXME SWITCHABLE
+        this.animateBackGround();
 
         // DRAW PLATFORMS
         for (let platform of this.platforms) {
@@ -526,7 +551,7 @@ class Game {
     }
     initialize() {
         if (this.level == null) {
-            this.level = 6;
+            this.level = 1;
         }
 
         console.log("Level "+ this.level); // FIXME DEBUG
