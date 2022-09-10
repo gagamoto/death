@@ -52,7 +52,7 @@ ALT_RED = "red";
 class GameObject {
     constructor(context, x, y, width, height) {
         this.uid = String(Math.random()).substring(2); // unique identifier
-        console.log("New GameObject with pseudo-unique identifier " + this.uid)
+        console.debug("New GameObject with pseudo-unique identifier " + this.uid)
         this.context = context;
 
         this.x = x;
@@ -86,7 +86,6 @@ class Target extends GameObject {
         this.bounceCount++ ;
         this.bounceCount = this.bounceCount%MAX_BOUNCE_FRAMES;
         let bounce = this.bounceCount/MAX_BOUNCE_FRAMES;
-        console.log(this.bounceCount );
         let margin = this.width * .1;
         let thickness = this.width / 4;
         drawCircle(this.context,
@@ -104,6 +103,7 @@ class Target extends GameObject {
     }
 }
 class Platform extends GameObject {
+    static MAX_POP_FRAMES = 20;
     constructor(context, x, y, width, height) {
         super(context, x, y, width, height);
         this.dead = false;
@@ -132,16 +132,25 @@ class Platform extends GameObject {
                 this.width - thickness*2, this.height - thickness*2,
                 this.color);
         }
+        else if (this.popCountDown > 0) {
+                this.popCountDown--;
+                let step = Platform.MAX_POP_FRAMES - this.popCountDown;
+                let size = step / this.width;
+                // console.log(size);
+
+                let thickness = .1;
+                drawCircle(this.context,
+                    this.x + this.width / 2,
+                    this.y + this.height / 2,
+                    size,
+                    null, this.color, thickness);
+
+        }
         if (DEBUG_MODE_GRAPHIC) { super.draw(); }
     }
     release() {
         this.dead = true;
-        if (false) {
-            // FIXME INITIALIZE COUNTDOWN?
-        }
-        else {
-            // FIXME DECREMENT COUNTDOWN?
-        }
+        this.popCountDown = Platform.MAX_POP_FRAMES;
     }
     trigger() {
         this.triggered = true;
@@ -313,7 +322,7 @@ class Game {
         this.context.font = "4px Times";
         this.context.fillStyle = ALT_RED;
         this.context.textAlign = "left";
-        this.context.fillText("version 0.b (sept. 8 22:57) ", 0, 4);
+        this.context.fillText("version 0.c (sept. 9 12:33) ", 0, 4);
     }
     draw() {
         this.context.clearRect(0, 0, this.context.canvas.clientWidth, this.context.canvas.clientHeight);
@@ -349,7 +358,7 @@ class Game {
         for (let i = 0; i < this.gridWidth; i++) {
             grid[i] = new Array(this.gridHeight);
             for (let j = 0; j < this.gridHeight; j++) {
-                if (this.level == 1) {
+                if (true) { // (this.level == 1) {
                     // -- LEVEL 1
                     // FIXME PSEUDO READ GRID
                     grid[i][j] = Boolean((j) % 2);
@@ -357,15 +366,15 @@ class Game {
                         grid[i][j] = false;
                     }
                 }
-                else {
-                    grid[i][j] = Boolean((j) % 2);
-                    if (grid[i][j] == true) {
-                        grid[i][j] = Boolean(Math.round(Math.random() - this.level/100)); // Random grid
-                    }
-                    if (j < 3) {
-                        grid[i][j] = false;
-                    }
-                }
+                // else {
+                //     grid[i][j] = Boolean((j) % 2);
+                //     if (grid[i][j] == true) {
+                //         grid[i][j] = Boolean(Math.round(Math.random() - this.level/100)); // Random grid
+                //     }
+                //     if (j < 3) {
+                //         grid[i][j] = false;
+                //     }
+                // }
             }
         }
         console.debug(grid);
