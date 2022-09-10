@@ -103,13 +103,14 @@ class Target extends GameObject {
     }
 }
 class Platform extends GameObject {
-    static MAX_POP_FRAMES = 20;
+    // static MAX_POP_FRAMES = 20;
     constructor(context, x, y, width, height) {
         super(context, x, y, width, height);
         this.dead = false;
         // FIXME INITIALIZE TRIGGERED MEMBER
         this.color = ALT_WHITE;
         this.borderColor = null;
+        this.MAX_POP_FRAMES = 20;
     }
     bounce() {
         const MAX_BOUNCE_FRAMES = 10;
@@ -134,7 +135,7 @@ class Platform extends GameObject {
         }
         else if (this.popCountDown > 0) {
                 this.popCountDown--;
-                let step = Platform.MAX_POP_FRAMES - this.popCountDown;
+                let step = this.MAX_POP_FRAMES - this.popCountDown;
                 let size = step / this.width;
                 // console.log(size);
 
@@ -150,7 +151,7 @@ class Platform extends GameObject {
     }
     release() {
         this.dead = true;
-        this.popCountDown = Platform.MAX_POP_FRAMES;
+        this.popCountDown = this.MAX_POP_FRAMES;
     }
     trigger() {
         this.triggered = true;
