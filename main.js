@@ -25,6 +25,17 @@ getChannelData(0).set(k);b=zzfxX.createBufferSource();b.buffer=p;b.connect(zzfxX
 // MIT License - Copyright 2022 Antoine Dricot
 // A dumb game.
 
+/** Draw a line */
+function drawLine(context, ax, ay, bx, by, color, width) {
+    context.beginPath();
+    context.strokeStyle = color;
+    context.lineWidth = width;
+    context.moveTo(ax, ay);
+    context.lineTo(bx, by);
+    context.stroke();
+    context.closePath();
+}
+
 /** Draw a box */
 function drawBox(context, x, y, width, height, fillStyle = null, strokeStyle = null, strokeWidth = 0) {
     context.beginPath();
@@ -195,6 +206,11 @@ class Platform extends GameObject {
         this.triggered = true;
     }
 }
+let ANIMATIONS = {
+    IDLE: "Idle",
+    RUNNING_RIGHT: "Running right",
+    RUNNING_LEFT: "Running left"
+}
 class MainCharacter extends GameObject {
     constructor(context, x, y, width, height) {
         super(context, x, y, width, height);
@@ -202,43 +218,77 @@ class MainCharacter extends GameObject {
         this.dy = 1; // FIXME GRAVITY!
 
         this.maxRunningSpeed = .8;
+        this.animation = ANIMATIONS.IDLE;
+        this.animation_step = 0;
     }
     draw() {
-        if (false) {}
-        else { // DEFAULT STATE
-            // BODY
-            drawBox(this.context, this.x, this.y, this.width, this.height*.8, ALT_WHITE);
-            // EYES
-            let eyeHeight = this.y + this.height * .4;
-            // drawCircle
-            // -- LEFT EYE
-            drawCircle(this.context,
-                this.x + this.width / 2,
-                eyeHeight,
-                .5, ALT_BLACK, null, null);
-            // drawBox(this.context,
-            //     this.x + this.width / 2,
-            //     eyeHeight,
-            //     this.width * .1, this.height * .1, ALT_BLACK);
-            // -- RIGHT EYE
-            drawCircle(this.context,
-                this.x + this.width / 2 + this.width * .3,
-                eyeHeight,
-                .5, ALT_BLACK, null, null);
-            // drawBox(this.context,
-            //     this.x + this.width / 2 + this.width / 4,
-            //     eyeHeight,
-            //     this.width * .1, this.height * .1, ALT_BLACK);
-            // // MOUSTACHE
-            // let moustacheRadius = this.width * .15;
-            // let moustacheThickness = .3;
-            // drawBottomCircle(this.context,
-            //     this.x + this.width / 2, this.y + this.height / 2,
-            //     moustacheRadius, null, ALT_BLACK, moustacheThickness);
-            // drawBottomCircle(this.context,
-            //     this.x + this.width / 2 + 2 * moustacheRadius, this.y + this.height / 2,
-            //     moustacheRadius, null, ALT_BLACK, moustacheThickness);
+        let FRAMES = 2;
+        this.animation_step += .1;
+        this.animation_step = this.animation_step%FRAMES;
+        if (this.dx > 0) {
+            this.animation = ANIMATIONS.RUNNING_RIGHT;
+        } else if (this.dx < 0) {
+            this.animation = ANIMATIONS.RUNNING_LEFT;
         }
+        // IDLE VALUES
+        let legThickness = this.width * .15;
+        let bodyHeight = this.height * .8;
+        let bodyWidth = bodyHeight;
+        let xMargin = this.width - bodyWidth;
+
+        let eyeCenter = this.getCenter();
+        let pupilCenter = eyeCenter; // FIXME PUPIL SHIFT
+        let eyeMiddle = this.getMiddle() - xMargin / 2;
+        let eyeRadius = this.width / 5;
+
+        let hipSpace = this.width * .4;
+        let xleftHip = this.getCenter() - hipSpace / 2;
+        let yleftHip =  this.getMiddle() + xMargin / 2;
+        let xleftHeel = xleftHip;
+        let yleftHeel =  this.getBottom() + .5; // FIXME
+
+        let xrightHip = this.getCenter() + hipSpace / 2;
+        let yrightHip =  this.getMiddle() + xMargin / 2;
+        let xrightHeel = xrightHip;
+        let yrightHeel =  this.getBottom() + .5; // FIXME
+
+        if (this.animation == ANIMATIONS.IDLE) {
+            eyeCenter = eyeCenter;
+            pupilCenter = eyeCenter + Math.sin(.1*this.animation_step*Math.PI) * eyeRadius / 4;
+        } else if (this.animation == ANIMATIONS.RUNNING_RIGHT) {
+            eyeCenter =  this.getCenter() + xMargin / 2;
+            pupilCenter = eyeCenter + eyeRadius / 3;
+            xleftHeel = xleftHeel - Math.sin(this.animation_step*Math.PI) * hipSpace / 2;
+            xrightHeel = xrightHeel + Math.sin(this.animation_step*Math.PI) * hipSpace / 2;
+            yleftHeel = yleftHeel + Math.cos(this.animation_step*Math.PI) * hipSpace /4 - hipSpace/8;
+            yrightHeel = yrightHeel - Math.cos(this.animation_step*Math.PI) * hipSpace /4 - hipSpace/8;
+        } else if (this.animation == ANIMATIONS.RUNNING_LEFT) {
+            eyeCenter =  this.getCenter() - xMargin / 2;
+            pupilCenter = eyeCenter - eyeRadius / 3;
+            xleftHeel = xleftHeel + Math.sin(this.animation_step*Math.PI) * hipSpace / 2;
+            xrightHeel = xrightHeel - Math.sin(this.animation_step*Math.PI) * hipSpace / 2;
+            yleftHeel = yleftHeel + Math.cos(this.animation_step*Math.PI) * hipSpace /4 - hipSpace/8;
+            yrightHeel = yrightHeel - Math.cos(this.animation_step*Math.PI) * hipSpace /4 - hipSpace/8;
+        }
+
+        // BODY
+        drawBox(
+            this.context,
+            this.x + xMargin / 2, this.y + Math.sin(.1*this.animation_step*Math.PI),
+            bodyWidth, bodyHeight,
+            ALT_RED, null, 1); // FIXME
+        // EYE
+        drawCircle(
+            this.context, eyeCenter, eyeMiddle,
+            eyeRadius,
+            ALT_WHITE, null, null);
+        drawCircle(
+            this.context, pupilCenter, eyeMiddle,
+            eyeRadius / 2,
+            ALT_BLACK, null, null);
+        // LEGS
+        drawLine(this.context, xleftHip, yleftHip, xleftHeel, yleftHeel, ALT_RED, legThickness);
+        drawLine(this.context, xrightHip, yrightHip, xrightHeel, yrightHeel, ALT_RED, legThickness);
     }
     isFalling() {
         return (this.platformUid == null);
@@ -290,7 +340,7 @@ class Game {
         this.target = null;
     }
     collisions() {
-        // Collisions between character adn platforms!
+        // Collisions between character and platforms!
         this.character.platformUid = null;
         for (let platform of this.platforms) {
             if (platform.dead) {
@@ -459,7 +509,7 @@ class Game {
         }
         // Construct main character
         this.character = new MainCharacter(
-            this.context, 20, 10, 5, 5); // FIXME VALUES?
+            this.context, 20, 10, 6, 6); // FIXME VALUES?
 
         // Set item
         this.target = new Target(
