@@ -74,18 +74,17 @@ function drawBottomCircle(context = null, x = 0, y = 0, radius = 0, fillStyle = 
     context.closePath();
 }
 
-let DEBUG_MODE = false;
-let DEBUG_MODE_GRAPHIC = false || DEBUG_MODE; // DRAW BOX
-let REFERENCE_SIZE = 100;
+const REFERENCE_SIZE = 100;
 
-let ALT_BLACK = "black";
-let ALT_WHITE = "white";
-let ALT_RED = "red";
-let ALT_YELLOW = "yellow";
+const ALT_BLACK = "black";
+const ALT_WHITE = "white";
+const ALT_RED = "red";
+const ALT_YELLOW = "yellow";
 
-let SOUND_TARGET = [1.5,1,319,.03,.28,.48,1,.61,,.4,-233,.05,.11,.1,,,.07,.59,.16,.43]; // Powerup 186
-let SOUND_POP = [5.25,,378,,.02,.02,3,2.6,,,-338,,,,120,,,.78,.01,.05];
-let SOUND_NOPE = [.5,,37,,.05,.08,3,.92,,.1,,-0.01,.08,,-1,,.24,.97,.05]; // Shoot 199 - Mutation 2
+const SOUND_TARGET = [1.5,1,319,.03,.28,.48,1,.61,,.4,-233,.05,.11,.1,,,.07,.59,.16,.43]; // Powerup 186
+const SOUND_POP = [5.25,,378,,.02,.02,3,2.6,,,-338,,,,120,,,.78,.01,.05];
+const SOUND_NOPE = [.5,,37,,.05,.08,3,.92,,.1,,-0.01,.08,,-1,,.24,.97,.05]; // Shoot 199 - Mutation 2
+const SOUND_HELL = [1.6,1,578,.06,.11,.43,4,3.92,.5,,50,.01,.14,.1,1,.3,.37,.47,.08,.39]; // Explosion 207 - Mutation 4
 
 class GameObject {
     constructor(context, x, y, width, height) {
@@ -146,18 +145,15 @@ class Target extends GameObject {
             this.y + this.height / 2 + Math.sin(bounce*Math.PI*2) * .5,
             this.width / 2 - thickness / 2 - margin,
             null, ALT_RED, thickness * .8);
-        if (DEBUG_MODE_GRAPHIC) { super.draw(); }
-
     }
 }
 class Platform extends GameObject {
-    // static MAX_POP_FRAMES = 20;
     constructor(context, x, y, width, height) {
         super(context, x, y, width, height);
         this.dead = false;
         // FIXME INITIALIZE TRIGGERED MEMBER
-        this.color = ALT_WHITE;
-        this.borderColor = null;
+        this.color = ALT_BLACK;
+        this.borderColor = ALT_WHITE;
         this.MAX_POP_FRAMES = 20;
     }
     bounce() {
@@ -168,7 +164,7 @@ class Platform extends GameObject {
         } else {this.bounceCount = 1;} // MAX
     }
     draw() {
-        let thickness = .3;
+        let thickness = this.width * .1;
         let bounce = 0;
         if (this.bounceCount != null) {
             bounce = Math.sin(this.bounceCount*Math.PI) * .5;
@@ -179,7 +175,7 @@ class Platform extends GameObject {
                 this.x + thickness,
                 this.y + thickness + bounce,
                 this.width - thickness*2, this.height - thickness*2,
-                this.color);
+                this.color, this.borderColor, thickness);
         }
         else if (this.popCountDown > 0) {
                 this.popCountDown--;
@@ -192,10 +188,9 @@ class Platform extends GameObject {
                     this.x + this.width / 2,
                     this.y + this.height / 2,
                     size,
-                    null, this.color, thickness);
+                    null, this.borderColor, thickness);
 
         }
-        if (DEBUG_MODE_GRAPHIC) { super.draw(); }
     }
     release() {
         zzfx(...SOUND_POP);
@@ -321,6 +316,14 @@ const GAME_STATE = { // USEFUL KEYS, IGNORE VALUES.
     PLAYING: "PLAYING",
     DEFAULT: "DEFAULT"
 };
+const GAME_ELEMENTS = { // USEFUL KEYS, IGNORE VALUES.
+    NOTHING: "NOTHING",
+    MAINCHARACTER: "MAINCHARACTER",
+    PLATFORM: "PLATFORM",
+    IMMORTALPLATFORM: "IMMORTALPLATFORM",
+    TARGET: "TARGET",
+    DEFAULT: "DEFAULT"
+};
 class Game {
     constructor(canvas) {
         this.canvas = canvas;
@@ -352,8 +355,7 @@ class Game {
             if (this.character.isAlignedto(platform)) { this.character.crashInPlatform(platform); }
 
             // Is character grounded on a platform?
-            if (this.character.getCenter() > platform.getLeft() &&
-                this.character.getCenter() < platform.getRight()) {
+            if (this.character.centerIsAlignedTo(platform)) {
                 // -- Horizontally aligned
                 if (this.character.getBottom() >= platform.getTop() &&
                     this.character.getBottom() < platform.getBottom()) {
@@ -402,7 +404,7 @@ class Game {
         this.context.font = "6px Helvetica";
         this.context.fillStyle = ALT_WHITE;
         this.context.textAlign = "center";
-        this.context.fillText("LEVEL "+ this.level, REFERENCE_SIZE / 2, REFERENCE_SIZE * .2);
+        this.context.fillText("LEVEL "+ this.level, REFERENCE_SIZE / 2, REFERENCE_SIZE * .1);
     }
     drawVersion() {
         this.context.font = "4px Times";
@@ -438,35 +440,29 @@ class Game {
         for (let i = 0; i < this.gridWidth; i++) {
             grid[i] = new Array(this.gridHeight);
             for (let j = 0; j < this.gridHeight; j++) {
-                // FIXME PSEUDO READ GRID
-                // -- LEVEL BASE
                 if (i == 0 || i == this.gridWidth-1) {
-                    grid[i][j] = true; // FULL WALLS
-                    continue;
+                    // FIXME IMMORTAL
+                    grid[i][j] = GAME_ELEMENTS.PLATFORM; // FULL WALLS
                 }
-                grid[i][j] = Boolean((j) % 2);
-                if (j < 3) {
-                    grid[i][j] = false;
+                else if (j > 1) {
+                    grid[i][j] = GAME_ELEMENTS.PLATFORM; // FLOOR
                 }
-                // if (this.level == 1) {
-                //     // -- LEVEL 1
-                //     // FIXME PSEUDO READ GRID
-                //     grid[i][j] = Boolean((j) % 2);
-                //     if (j < 3) {
-                //         grid[i][j] = false;
-                //     }
-                // }
-                // else {
-                //     grid[i][j] = Boolean((j) % 2);
-                //     if (grid[i][j] == true) {
-                //         grid[i][j] = Boolean(Math.round(Math.random() - this.level/100)); // Random grid
-                //     }
-                //     if (j < 3) {
-                //         grid[i][j] = false;
-                //     }
-                // }
+                else {
+                    grid[i][j] = GAME_ELEMENTS.NOTHING; // NOTHING BY DEFAULT
+                }
             }
         }
+        grid[3][0] = GAME_ELEMENTS.MAINCHARACTER;
+                // // FIXME PSEUDO READ GRID
+                // // -- LEVEL BASE
+                // if (i == 0 || i == this.gridWidth-1) {
+                //     grid[i][j] = true; // FULL WALLS
+                //     continue;
+                // }
+                // grid[i][j] = Boolean((j) % 2);
+                // if (j < 3) {
+                //     grid[i][j] = false;
+                // }
         console.debug(grid);
         this.grid = grid;
     }
@@ -480,21 +476,33 @@ class Game {
 
         // Construct platforms
         this.platforms = new Array();
+        this.character = null;
         for (let i = 0; i < this.gridWidth; i++) {
             for (let j = 0; j < this.gridHeight; j++) {
-                if (!this.grid[i][j]) { continue; }
-                this.platforms.push(
-                    new Platform(
+                if (this.grid[i][j] == GAME_ELEMENTS.MAINCHARACTER) {
+                    // Construct main character
+                    this.character = new MainCharacter(
                         this.context,
                         i * this.blockWidth,
                         j * this.blockHeight,
-                        this.blockWidth,
-                        this.blockHeight));
+                        6, 6);
+                }
+                else if (this.grid[i][j] == GAME_ELEMENTS.PLATFORM) {
+                    this.platforms.push(
+                        new Platform(
+                            this.context,
+                            i * this.blockWidth, j * this.blockHeight,
+                            this.blockWidth,this.blockHeight));
+                }
+                else if (this.grid[i][j] == GAME_ELEMENTS.IMMORTALPLATFORM) {
+                    this.platforms.push(
+                        new PoppingPlatform(
+                            this.context,
+                            i * this.blockWidth, j * this.blockHeight,
+                            this.blockWidth,this.blockHeight));
+                }
             }
         }
-        // Construct main character
-        this.character = new MainCharacter(
-            this.context, 20, 10, 6, 6); // FIXME VALUES?
 
         // Set item
         this.target = new Target(
@@ -518,8 +526,8 @@ class Game {
         this.state = state;
     }
     endGameCycle(goToNextLevel) {
-        zzfx(...SOUND_TARGET);
-        console.debug("Enter Death!");
+        if (goToNextLevel) {zzfx(...SOUND_TARGET);}
+        else {zzfx(...SOUND_HELL);}
         this.cancelControls(); // FIXME
         if (goToNextLevel == true) {
             this.level++;
