@@ -373,32 +373,16 @@ class Game {
         // Is character within the target?
         // FIXME JUST TOUCH, GO INSIDE, OR GO THROUGH?
         // FIXME MARGIN
-        if (this.character.getRight() > this.target.getLeft() &&
-            this.character.getLeft() < this.target.getRight() &&
-            this.character.getBottom() <= this.target.getBottom() &&
-            this.character.getTop() > this.target.getTop()) {
-                this.endGameCycle(true);
-        }
+        if (this.character.isAlignedto(this.target)){this.endGameCycle(true);}
 
         // Is character entering Hell?
         // FIXME DRAW LAVA POP
+
         // Is character in Hell?
         if (this.character.getTop() > REFERENCE_SIZE) {
             console.log("Hell!");
             this.endGameCycle(false);
         }
-        // if (DEBUG_MODE_CONTROL == true) {
-        //     if (this.character.getRight() > REFERENCE_SIZE) {
-        //         this.character.turnBack();
-        //     }
-        //     else if (this.character.getLeft() < 0) {
-        //         this.character.turnBack();
-        //     }
-        //     if (this.character.getBottom() >= REFERENCE_SIZE) {
-        //         this.character.platformUid = "debug_bottom"
-        //         this.character.y = REFERENCE_SIZE - this.character.height;
-        //     }
-        // }
     }
     cancelControls() {for (const key in gControls) {delete gControls[key];}}
     control() {
