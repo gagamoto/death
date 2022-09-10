@@ -6,7 +6,7 @@
 // You can use zzfxV to set volume.
 // Feel free to minify it further for your own needs!
 
-/*'use strict'*/;let zzfx,zzfxV,zzfxX
+'use strict';let zzfx,zzfxV,zzfxX
 // ZzFXMicro - Zuper Zmall Zound Zynth - v1.1.8 ~ 884 bytes minified
 zzfxV=.4    // volume
 zzfx=       // play sound
@@ -24,7 +24,7 @@ getChannelData(0).set(k);b=zzfxX.createBufferSource();b.buffer=p;b.connect(zzfxX
 // Death
 // MIT License - Copyright 2022 Antoine Dricot
 // A dumb game.
-// FIXME USE STRICT!
+
 /** Draw a box */
 function drawBox(context, x, y, width, height, fillStyle = null, strokeStyle = null, strokeWidth = 0) {
     context.beginPath();
@@ -63,17 +63,17 @@ function drawBottomCircle(context = null, x = 0, y = 0, radius = 0, fillStyle = 
     context.closePath();
 }
 
-DEBUG_MODE = false;
-DEBUG_MODE_GRAPHIC = false || DEBUG_MODE; // DRAW BOX
-DEBUG_MODE_CONTROL = true || DEBUG_MODE;
-REFERENCE_SIZE = 100;
+let DEBUG_MODE = false;
+let DEBUG_MODE_GRAPHIC = false || DEBUG_MODE; // DRAW BOX
+let DEBUG_MODE_CONTROL = true || DEBUG_MODE;
+let REFERENCE_SIZE = 100;
 
-ALT_BLACK = "black";
-ALT_WHITE = "white";
-ALT_RED = "red";
+let ALT_BLACK = "black";
+let ALT_WHITE = "white";
+let ALT_RED = "red";
 
-SOUND_TARGET = [2.03,1,319,.03,.28,.48,1,.61,,.4,-233,.05,.11,.1,,,.07,.59,.16,.43]; // Powerup 186
-SOUND_POP = [5.25,,378,,.02,.02,3,2.6,,,-338,,,,120,,,.78,.01,.05];
+let SOUND_TARGET = [2.03,1,319,.03,.28,.48,1,.61,,.4,-233,.05,.11,.1,,,.07,.59,.16,.43]; // Powerup 186
+let SOUND_POP = [5.25,,378,,.02,.02,3,2.6,,,-338,,,,120,,,.78,.01,.05];
 
 class GameObject {
     constructor(context, x, y, width, height) {
@@ -341,7 +341,7 @@ class Game {
         }
     }
     drawLevel() {
-        this.context.font = "6px Arial";
+        this.context.font = "6px Helvetica";
         this.context.fillStyle = ALT_WHITE;
         this.context.textAlign = "center";
         this.context.fillText("LEVEL "+ this.level, REFERENCE_SIZE / 2, REFERENCE_SIZE * .2);
@@ -386,14 +386,24 @@ class Game {
         for (let i = 0; i < this.gridWidth; i++) {
             grid[i] = new Array(this.gridHeight);
             for (let j = 0; j < this.gridHeight; j++) {
-                if (true) { // (this.level == 1) {
-                    // -- LEVEL 1
-                    // FIXME PSEUDO READ GRID
-                    grid[i][j] = Boolean((j) % 2);
-                    if (j < 3) {
-                        grid[i][j] = false;
-                    }
+                // FIXME PSEUDO READ GRID
+                // -- LEVEL BASE
+                if (i == 0 || i == this.gridWidth-1) {
+                    grid[i][j] = true; // FULL WALLS
+                    continue;
                 }
+                grid[i][j] = Boolean((j) % 2);
+                if (j < 3) {
+                    grid[i][j] = false;
+                }
+                // if (this.level == 1) {
+                //     // -- LEVEL 1
+                //     // FIXME PSEUDO READ GRID
+                //     grid[i][j] = Boolean((j) % 2);
+                //     if (j < 3) {
+                //         grid[i][j] = false;
+                //     }
+                // }
                 // else {
                 //     grid[i][j] = Boolean((j) % 2);
                 //     if (grid[i][j] == true) {
@@ -475,7 +485,7 @@ function initializeCanvas() {
     return myCanvas;
 }
 
-gControls = new Object(); // FIXME NOT GLOBAL
+let gControls = new Object(); // FIXME NOT GLOBAL
 
 function keyDownHandler(e) {
     zzfxX.resume();
@@ -511,7 +521,7 @@ function touchUpHandler(e) {
 function main() {
     console.log("Hello, Death!")
     // -- Canvas
-    myCanvas = initializeCanvas();
+    let myCanvas = initializeCanvas();
     let game = new Game(myCanvas);
     game.run();
     // -- Control
