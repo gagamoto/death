@@ -80,11 +80,13 @@ const ALT_BLACK = "black";
 const ALT_WHITE = "white";
 const ALT_RED = "red";
 const ALT_YELLOW = "yellow";
+const ALT_BLUE = "blue";
 
 const SOUND_TARGET = [1.5,1,319,.03,.28,.48,1,.61,,.4,-233,.05,.11,.1,,,.07,.59,.16,.43]; // Powerup 186
 const SOUND_POP = [5.25,,378,,.02,.02,3,2.6,,,-338,,,,120,,,.78,.01,.05];
 const SOUND_NOPE = [.5,,37,,.05,.08,3,.92,,.1,,-0.01,.08,,-1,,.24,.97,.05]; // Shoot 199 - Mutation 2
 const SOUND_HELL = [1.6,1,578,.06,.11,.43,4,3.92,.5,,50,.01,.14,.1,1,.3,.37,.47,.08,.39]; // Explosion 207 - Mutation 4
+const SOUND_IMMORTAL = [,1,642,.01,.07,.16,,1.96,-8.1,-4.1,,,,,,,,.92,.05]; // Jump 220
 
 class GameObject {
     constructor(context, x, y, width, height) {
@@ -134,7 +136,7 @@ class Target extends GameObject {
         this.bounceCount = this.bounceCount%MAX_BOUNCE_FRAMES;
         let bounce = this.bounceCount/MAX_BOUNCE_FRAMES;
         let margin = this.width * .1;
-        let thickness = this.width / 6;
+        let thickness = this.width / 4;
         drawCircle(this.context,
             this.x + this.width / 2,
             this.y + this.height / 2 + Math.sin(bounce*Math.PI*2) * .5,
@@ -144,7 +146,7 @@ class Target extends GameObject {
             this.x + this.width / 2,
             this.y + this.height / 2 + Math.sin(bounce*Math.PI*2) * .5,
             this.width / 2 - thickness / 2 - margin,
-            null, ALT_RED, thickness * .8);
+            null, ALT_YELLOW, thickness * .7);
     }
 }
 class Platform extends GameObject {
@@ -181,8 +183,6 @@ class Platform extends GameObject {
                 this.popCountDown--;
                 let step = this.MAX_POP_FRAMES - this.popCountDown;
                 let size = step / this.width;
-                // console.log(size);
-
                 let thickness = .1;
                 drawCircle(this.context,
                     this.x + this.width / 2,
@@ -198,6 +198,20 @@ class Platform extends GameObject {
     }
     trigger() {
         this.triggered = true;
+    }
+}
+class ImmortalPlatform extends Platform {
+    constructor(context, x, y, width, height) {
+        super(context, x, y, width, height);
+        this.color = ALT_BLUE;
+    }
+    release(){}
+    trigger() {
+        if (this.triggered ) {return;}
+        else {
+            zzfx(...SOUND_IMMORTAL);
+            this.triggered = true;
+        }
     }
 }
 let ANIMATIONS = {
@@ -435,49 +449,65 @@ class Game {
         this.drawVersion() // FIXME REMOVE
     }
     generateGrid() {
+        const MARGIN_FOR_WALLS = 1;
+        const MIN_VERTICAL_POSITION = 4;
+
         let grid = new Array(this.gridWidth);
         for (let i = 0; i < this.gridWidth; i++) {
             grid[i] = new Array(this.gridHeight);
             for (let j = 0; j < this.gridHeight; j++) {
+                grid[i][j] = GAME_ELEMENTS.DEFAULT; // Placeholder
+            }
+        }
+
+        let numLevelCompleted = this.level - 1;
+        // Randomly sprinkle immortals!
+        const MAX_IMMORTAL_PLATFORMS = this.gridWidth;
+        let numberImmortalsToSet = (numLevelCompleted * 2 % MAX_IMMORTAL_PLATFORMS);
+        while (numberImmortalsToSet-- > 0) {
+            let immortalHorizontalPosition = MARGIN_FOR_WALLS + Math.floor(
+                Math.random()*(this.gridWidth-MARGIN_FOR_WALLS*2));
+            let immortalVerticalPosition = MIN_VERTICAL_POSITION + Math.floor(
+                Math.random()*(this.gridHeight-MIN_VERTICAL_POSITION));
+            grid[immortalHorizontalPosition][immortalVerticalPosition] = GAME_ELEMENTS.IMMORTALPLATFORM;
+        }
+
+        for (let i = 0; i < this.gridWidth; i++) {
+            for (let j = 0; j < this.gridHeight; j++) {
+                console.log(grid[i][j])
+                if (grid[i][j] != GAME_ELEMENTS.DEFAULT) {
+                    continue; // Already set
+                }
                 if (i == 0 || i == this.gridWidth-1) {
                     // FIXME IMMORTAL
-                    grid[i][j] = GAME_ELEMENTS.PLATFORM; // FULL WALLS
+                    grid[i][j] = GAME_ELEMENTS.IMMORTALPLATFORM; // Full walls
                 }
                 else if (j >= 2) { // LEAVE 2 LINES
-                    grid[i][j] = GAME_ELEMENTS.PLATFORM; // FLOOR
+                    // FIXME ADD EATING PLATFORMS
+                    // FIXME ADD NOTHING
+                    grid[i][j] = GAME_ELEMENTS.PLATFORM;
                 }
                 else {
                     grid[i][j] = GAME_ELEMENTS.NOTHING; // NOTHING BY DEFAULT
                 }
             }
         }
-        const MARGIN_FOR_WALLS = 1;
         let characterHorizontalPosition = MARGIN_FOR_WALLS + Math.floor(
             Math.random()*(this.gridWidth-MARGIN_FOR_WALLS*2));
         grid[characterHorizontalPosition][0] = GAME_ELEMENTS.MAINCHARACTER;
 
-        let targetHorizontalPosition = 1 + Math.floor(
-            Math.random()*(this.gridWidth-2));
-        const MIN_VERTICAL_POSITION = 4;
+        let targetHorizontalPosition = MARGIN_FOR_WALLS + Math.floor(
+            Math.random()*(this.gridWidth-MARGIN_FOR_WALLS*2));
         let targetVerticalPosition = MIN_VERTICAL_POSITION + Math.floor(
-            Math.random()*(this.gridHeight-MARGIN_FOR_WALLS));
+            Math.random()*(this.gridHeight-MIN_VERTICAL_POSITION));
         grid[targetHorizontalPosition][targetVerticalPosition] = GAME_ELEMENTS.TARGET;
-                // // FIXME PSEUDO READ GRID
-                // // -- LEVEL BASE
-                // if (i == 0 || i == this.gridWidth-1) {
-                //     grid[i][j] = true; // FULL WALLS
-                //     continue;
-                // }
-                // grid[i][j] = Boolean((j) % 2);
-                // if (j < 3) {
-                //     grid[i][j] = false;
-                // }
+
         console.debug(grid);
         this.grid = grid;
     }
     initialize() {
         if (this.level == null) {
-            this.level = 1;
+            this.level = 6;
         }
 
         console.log("Level "+ this.level); // FIXME DEBUG
@@ -491,30 +521,25 @@ class Game {
                 if (this.grid[i][j] == GAME_ELEMENTS.MAINCHARACTER) {
                     // Construct main character
                     this.character = new MainCharacter(
-                        this.context,
-                        i * this.blockWidth,
-                        j * this.blockHeight,
+                        this.context, i * this.blockWidth, j * this.blockHeight,
                         6, 6);
                 }
                 else if (this.grid[i][j] == GAME_ELEMENTS.TARGET) {
                     // Set target
                     this.target = new Target(
-                        this.context,
-                        i*this.blockWidth, j*this.blockHeight,
+                        this.context, i*this.blockWidth, j*this.blockHeight,
                         this.blockWidth, this.blockHeight);
                 }
                 else if (this.grid[i][j] == GAME_ELEMENTS.PLATFORM) {
                     this.platforms.push(
                         new Platform(
-                            this.context,
-                            i * this.blockWidth, j * this.blockHeight,
+                            this.context, i * this.blockWidth, j * this.blockHeight,
                             this.blockWidth,this.blockHeight));
                 }
                 else if (this.grid[i][j] == GAME_ELEMENTS.IMMORTALPLATFORM) {
                     this.platforms.push(
-                        new PoppingPlatform(
-                            this.context,
-                            i * this.blockWidth, j * this.blockHeight,
+                        new ImmortalPlatform(
+                            this.context, i * this.blockWidth, j * this.blockHeight,
                             this.blockWidth,this.blockHeight));
                 }
             }
