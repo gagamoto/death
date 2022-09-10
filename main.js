@@ -76,12 +76,12 @@ function drawBottomCircle(context = null, x = 0, y = 0, radius = 0, fillStyle = 
 
 let DEBUG_MODE = false;
 let DEBUG_MODE_GRAPHIC = false || DEBUG_MODE; // DRAW BOX
-let DEBUG_MODE_CONTROL = true || DEBUG_MODE;
 let REFERENCE_SIZE = 100;
 
 let ALT_BLACK = "black";
 let ALT_WHITE = "white";
 let ALT_RED = "red";
+let ALT_YELLOW = "yellow";
 
 let SOUND_TARGET = [1.5,1,319,.03,.28,.48,1,.61,,.4,-233,.05,.11,.1,,,.07,.59,.16,.43]; // Powerup 186
 let SOUND_POP = [5.25,,378,,.02,.02,3,2.6,,,-338,,,,120,,,.78,.01,.05];
@@ -135,7 +135,7 @@ class Target extends GameObject {
         this.bounceCount = this.bounceCount%MAX_BOUNCE_FRAMES;
         let bounce = this.bounceCount/MAX_BOUNCE_FRAMES;
         let margin = this.width * .1;
-        let thickness = this.width / 4;
+        let thickness = this.width / 6;
         drawCircle(this.context,
             this.x + this.width / 2,
             this.y + this.height / 2 + Math.sin(bounce*Math.PI*2) * .5,
@@ -276,19 +276,19 @@ class MainCharacter extends GameObject {
             this.context,
             this.x + xMargin / 2, this.y + Math.sin(.1*this.animation_step*Math.PI),
             bodyWidth, bodyHeight,
-            ALT_RED, null, 1); // FIXME
+            ALT_WHITE, null, null); // FIXME
         // EYE
         drawCircle(
             this.context, eyeCenter, eyeMiddle,
             eyeRadius,
-            ALT_WHITE, null, null);
+            ALT_WHITE, ALT_BLACK, .3);
         drawCircle(
             this.context, pupilCenter, eyeMiddle,
             eyeRadius / 2,
             ALT_BLACK, null, null);
         // LEGS
-        drawLine(this.context, xleftHip, yleftHip, xleftHeel, yleftHeel, ALT_RED, legThickness);
-        drawLine(this.context, xrightHip, yrightHip, xrightHeel, yrightHeel, ALT_RED, legThickness);
+        drawLine(this.context, xleftHip, yleftHip, xleftHeel, yleftHeel, ALT_WHITE, legThickness);
+        drawLine(this.context, xrightHip, yrightHip, xrightHeel, yrightHeel, ALT_WHITE, legThickness);
     }
     isFalling() {
         return (this.platformUid == null);
@@ -377,21 +377,28 @@ class Game {
             this.character.getLeft() < this.target.getRight() &&
             this.character.getBottom() <= this.target.getBottom() &&
             this.character.getTop() > this.target.getTop()) {
-                this.endGameCycle();
+                this.endGameCycle(true);
         }
 
-        if (DEBUG_MODE_CONTROL == true) {
-            if (this.character.getRight() > REFERENCE_SIZE) {
-                this.character.turnBack();
-            }
-            else if (this.character.getLeft() < 0) {
-                this.character.turnBack();
-            }
-            if (this.character.getBottom() >= REFERENCE_SIZE) {
-                this.character.platformUid = "debug_bottom"
-                this.character.y = REFERENCE_SIZE - this.character.height;
-            }
+        // Is character entering Hell?
+        // FIXME DRAW LAVA POP
+        // Is character in Hell?
+        if (this.character.getTop() > REFERENCE_SIZE) {
+            console.log("Hell!");
+            this.endGameCycle(false);
         }
+        // if (DEBUG_MODE_CONTROL == true) {
+        //     if (this.character.getRight() > REFERENCE_SIZE) {
+        //         this.character.turnBack();
+        //     }
+        //     else if (this.character.getLeft() < 0) {
+        //         this.character.turnBack();
+        //     }
+        //     if (this.character.getBottom() >= REFERENCE_SIZE) {
+        //         this.character.platformUid = "debug_bottom"
+        //         this.character.y = REFERENCE_SIZE - this.character.height;
+        //     }
+        // }
     }
     cancelControls() {for (const key in gControls) {delete gControls[key];}}
     control() {
@@ -417,7 +424,7 @@ class Game {
         this.context.font = "4px Times";
         this.context.fillStyle = ALT_RED;
         this.context.textAlign = "left";
-        this.context.fillText("version 0.c (sept. 9 12:33) ", 0, 4);
+        this.context.fillText("version 0.d (sept. 10 18:31) ", 0, 4);
     }
     draw() {
         this.context.clearRect(0, 0, this.context.canvas.clientWidth, this.context.canvas.clientHeight);
@@ -427,12 +434,6 @@ class Game {
             this.context,
             0, 0, REFERENCE_SIZE, REFERENCE_SIZE,
             "black"); // FIXME SWITCHABLE
-        if (DEBUG_MODE_GRAPHIC) {
-            drawBox(
-                this.context,
-                0, 0, REFERENCE_SIZE, REFERENCE_SIZE,
-                "yellow");
-        }
 
         // DRAW PLATFORMS
         for (let platform of this.platforms) {
@@ -488,7 +489,7 @@ class Game {
     initialize() {
         if (this.level == null) {
             this.level = 1;
-        } else {this.level += 1;}
+        }
 
         console.log("Level "+ this.level); // FIXME DEBUG
         this.generateGrid(this.gridWidth, this.gridHeight);
@@ -532,10 +533,13 @@ class Game {
     setState(state) {
         this.state = state;
     }
-    endGameCycle() {
+    endGameCycle(goToNextLevel) {
         zzfx(...SOUND_TARGET);
         console.debug("Enter Death!");
         this.cancelControls(); // FIXME
+        if (goToNextLevel == true) {
+            this.level++;
+        }
         this.setState(GAME_STATE.INITIALIZATION);
     }
     // FIXME MAKE CONTROLLER CLASS
