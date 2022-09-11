@@ -87,10 +87,10 @@ const COLOR_BACKGROUND = COLOR_CLAIR;
 const COLOR_WALLS = COLOR_SOMBRE;
 const COLOR_INSTRUCTIONS = COLOR_SOMBRE;
 
-const SOUND_TARGET = [1.5,1,319,.03,.28,.48,1,.61,,.4,-233,.05,.11,.1,,,.07,.59,.16,.43]; // Powerup 186
+const SOUND_TARGET = [.5,,1634,.01,.07,.13,,1.69,2.2,4.5,,,.03,.1,2.8,,,.43,.05];
 const SOUND_POP = [5.25,,378,,.02,.02,3,2.6,,,-338,,,,120,,,.78,.01,.05];
 const SOUND_NOPE = [.5,,37,,.05,.08,3,.92,,.1,,-0.01,.08,,-1,,.24,.97,.05]; // Shoot 199 - Mutation 2
-const SOUND_HELL = [1.6,1,578,.06,.11,.43,4,3.92,.5,,50,.01,.14,.1,1,.3,.37,.47,.08,.39]; // Explosion 207 - Mutation 4
+const SOUND_HELL = [1.95,,164,,.03,.18,,.35,,,-182,.08,,,4.6,,,.51,,.16]; // Pickup 322;
 const SOUND_IMMORTAL = [,1,642,.01,.07,.16,,1.96,-8.1,-4.1,,,,,,,,.92,.05]; // Jump 220
 const SOUND_BAM = [1.01,1,492,.07,.13,.26,1,1.66,3.7,,-6,.1,.15,,15,.1,,.91,.23]; // Powerup 235
 
@@ -429,7 +429,7 @@ class Game {
             if (this.character.dx == 0) {
                 this.setState(GAME_STATE.PLAYING);
                 this.character.dx = this.character.maxRunningSpeed;
-            } else {
+            } else if (!this.character.isFalling()) {
                 this.character.dx = -this.character.dx; // FIXME
             }
             gClicked = false;
