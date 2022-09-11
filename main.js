@@ -242,8 +242,17 @@ class MainCharacter extends GameObject {
         this.maxRunningSpeed = .8;
         this.animation = ANIMATIONS.IDLE;
         this.animation_step = 0;
+        this.step = 0;
     }
     draw() {
+        const MAX_STEP = 60; // Multiple of all the smaller steps number
+        this.step++;
+        this.step = this.step % MAX_STEP;
+
+        // Anim. body bounce (30 frames loop)
+        const BODY_BOUNCE_AMPLITUDE = this.width * .02;
+        const BODY_BOUNCE_DURATION = 20;
+
         let FRAMES = 2;
         this.animation_step += .1;
         this.animation_step = this.animation_step%FRAMES;
@@ -252,12 +261,14 @@ class MainCharacter extends GameObject {
         } else if (this.dx < 0) {
             this.animation = ANIMATIONS.RUNNING_LEFT;
         }
-        // FIXME ADD BOUNCE IN IDLE BODY
-        // IDLE VALUES
+
+        // DEFAULT VALUES
         let legThickness = this.width * .15;
         let bodyHeight = this.height * .8;
         let bodyWidth = bodyHeight;
         let xMargin = this.width - bodyWidth;
+        let normalizedStep = (this.step % BODY_BOUNCE_DURATION)/ BODY_BOUNCE_DURATION;
+        let bodyBounce = 0;
 
         let eyeCenter = this.getCenter();
         let pupilCenter = eyeCenter; // FIXME PUPIL SHIFT
@@ -276,8 +287,8 @@ class MainCharacter extends GameObject {
         let yrightHeel =  this.getBottom() + .5; // FIXME
 
         if (this.animation == ANIMATIONS.IDLE) {
-            eyeCenter = eyeCenter;
-            pupilCenter = eyeCenter + Math.sin(.1*this.animation_step*Math.PI) * eyeRadius / 4;
+            bodyBounce = BODY_BOUNCE_AMPLITUDE * Math.sin(normalizedStep*2*Math.PI);
+            eyeMiddle = eyeMiddle + bodyBounce;
         } else if (this.animation == ANIMATIONS.RUNNING_RIGHT) {
             eyeCenter =  this.getCenter() + xMargin / 2;
             pupilCenter = eyeCenter + eyeRadius / 3;
@@ -300,7 +311,8 @@ class MainCharacter extends GameObject {
         // BODY
         drawBox(
             this.context,
-            this.x + xMargin / 2, this.y,
+            this.x + xMargin / 2,
+            this.y + bodyBounce,
             bodyWidth, bodyHeight,
             COLOR_NOIR, null, null);
         // EYE
@@ -418,7 +430,7 @@ class Game {
             this.endGameCycle(false);
         }
     }
-    cancelControls() {}
+    cancelControls() {gClicked=false;}
     control() {
 
         if (gClicked) {
@@ -448,17 +460,15 @@ class Game {
             this.context.fillText(
                 "TAP TO MOVE", REFERENCE_SIZE / 2, this.blockHeight * 4 - this.blockHeight / 4);
             this.context.fillText(
-                "SEEK THY HALO", REFERENCE_SIZE / 2, this.blockHeight * 6 - this.blockHeight / 4);
-            this.context.fillText(
-                "GOOD LUCK!", REFERENCE_SIZE / 2, this.blockHeight * 8 - this.blockHeight / 4);
+                "GET THY HALO", REFERENCE_SIZE / 2, this.blockHeight * 6 - this.blockHeight / 4);
         }
     }
-    drawVersion() {
-        this.context.font = "4px Times";
-        this.context.fillStyle = COLOR_SAILLANT;
-        this.context.textAlign = "left";
-        this.context.fillText("version 1.a (sept. 11 12:47) ", 0, 4);
-    }
+    // drawVersion() {
+    //     this.context.font = "4px Times";
+    //     this.context.fillStyle = COLOR_SAILLANT;
+    //     this.context.textAlign = "left";
+    //     this.context.fillText("version 1.a (sept. 11 12:47) ", 0, 4);
+    // }
     drawBackground() {
         const WALL_WIDTH = REFERENCE_SIZE * 0.02;
         // -- Draw sky
@@ -485,7 +495,7 @@ class Game {
             this.state == GAME_STATE.INITIALIZED) {
             this.drawInstructions();
         }
-        this.drawVersion() // FIXME REMOVE
+        // this.drawVersion() // DEBUG
     }
     generateGrid() {
         let grid = new Array(this.gridWidth);
@@ -496,28 +506,6 @@ class Game {
             }
         }
         let numLevelCompleted = this.level - 1;
-
-        // // Randomly sprinkle mortals!
-        // const MAX_MORTAL_PLATFORMS = this.gridWidth;
-        // let numberMortalsToSet = 0; // (numLevelCompleted % MAX_MORTAL_PLATFORMS);
-        // while (numberMortalsToSet-- > 0) {
-        //     let mortalHorizontalPosition = MARGIN_FOR_WALLS + Math.floor(
-        //         Math.random()*(this.gridWidth-MARGIN_FOR_WALLS*2));
-        //     let mortalVerticalPosition = MIN_VERTICAL_POSITION + Math.floor(
-        //         Math.random()*(this.gridHeight-MIN_VERTICAL_POSITION));
-        //     grid[mortalHorizontalPosition][mortalVerticalPosition] = GAME_ELEMENTS.MORTALPLATFORM;
-        // }
-
-        // // Randomly sprinkle immortals!
-        // const MAX_IMMORTAL_PLATFORMS = this.gridWidth;
-        // let numberImmortalsToSet = (numLevelCompleted * 2 % MAX_IMMORTAL_PLATFORMS);
-        // while (numberImmortalsToSet-- > 0) {
-        //     let immortalHorizontalPosition = MARGIN_FOR_WALLS + Math.floor(
-        //         Math.random()*(this.gridWidth-MARGIN_FOR_WALLS*2));
-        //     let immortalVerticalPosition = MIN_VERTICAL_POSITION + Math.floor(
-        //         Math.random()*(this.gridHeight-MIN_VERTICAL_POSITION));
-        //     grid[immortalHorizontalPosition][immortalVerticalPosition] = GAME_ELEMENTS.IMMORTALPLATFORM;
-        // }
 
         for (let i = 0; i < this.gridWidth; i++) {
             for (let j = 0; j < this.gridHeight; j++) {
@@ -613,7 +601,7 @@ class Game {
     }
     run() {
         if (this.state == GAME_STATE.INITIALIZATION) {
-            console.log("Hello! Initialize!"); // FIXME REMOVE
+            console.debug("Initialize!");
             this.initialize();
         }
         this.collisions();
