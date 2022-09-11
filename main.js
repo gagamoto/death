@@ -25,6 +25,11 @@ getChannelData(0).set(k);b=zzfxX.createBufferSource();b.buffer=p;b.connect(zzfxX
 // MIT License - Copyright 2022 Antoine Dricot
 // A dumb game.
 
+/** Get a random integer between a and b*/
+function getRandomIntegerBetween(a, b) {
+    return Math.round(a + Math.random() * (b - a));
+}
+
 /** Draw a line */
 function drawLine(context, ax, ay, bx, by, color, width) {
     context.beginPath();
@@ -142,17 +147,12 @@ class Target extends GameObject {
         this.bounceCount = this.bounceCount%MAX_BOUNCE_FRAMES;
         let bounce = this.bounceCount/MAX_BOUNCE_FRAMES;
         let margin = this.width * .15;
-        let thickness = this.width / 4;
+        let thickness = this.width / 2;
         drawCircle(this.context,
             this.x + this.width / 2,
             this.y + this.height / 2 + Math.sin(bounce*Math.PI*2) * .5,
             this.width / 2 - thickness / 2 - margin,
-            null, COLOR_SOMBRE, thickness);
-        drawCircle(this.context,
-            this.x + this.width / 2,
-            this.y + this.height / 2 + Math.sin(bounce*Math.PI*2) * .5,
-            this.width / 2 - thickness / 2 - margin,
-            null, COLOR_SAILLANT, thickness * .7);
+            null, COLOR_SAILLANT, thickness);
     }
 }
 class Platform extends GameObject {
@@ -544,27 +544,24 @@ class Game {
         grid[1][0] = GAME_ELEMENTS.MAINCHARACTER;
 
         // Position Halo
+        // -- Increase depth at first...
+        let targetVerticalPosition = this.level % this.gridHeight; // Modulo could be removed
+        // ... then random depth
+        if (this.level >= this.gridHeight) {
+            targetVerticalPosition = getRandomIntegerBetween(3, this.gridHeight - 1);
+        }
+
         let targetHorizontalPosition = this.gridWidth - 2;
-        let targetVerticalPosition = 1;
-        // -- Increase depth
-        if (numLevelCompleted > 0) {
-            // FIXME PREVENT WIN ON START
-            targetVerticalPosition = (numLevelCompleted + 1) % this.gridHeight;
-            // -- No jumps
-            if (targetVerticalPosition == 0) {
-                targetVerticalPosition = 3;
-            }
-        }
-        // -- Random horizontal
-        if (targetVerticalPosition > 2) {
-            targetHorizontalPosition = Math.floor(Math.random()*this.gridWidth);
-        }
         if (targetVerticalPosition == this.gridHeight - 1) {
-            console.log("Last line!")
-            if (targetHorizontalPosition < 2) {targetHorizontalPosition = 2;}
-            else if (targetHorizontalPosition > this.gridWidth - 3) {
-                targetHorizontalPosition = this.gridWidth - 3;}
+            // Margin for the last line
+            targetHorizontalPosition = getRandomIntegerBetween(2, this.gridWidth - 3);
+        } else if (targetVerticalPosition > 2) {
+            targetHorizontalPosition = getRandomIntegerBetween(0, this.gridWidth - 1);
         }
+        // -- No jumps - could be removed but kept for future
+        // if (targetVerticalPosition == 0) {
+        //     targetVerticalPosition = 3;
+        // }
         grid[targetHorizontalPosition][targetVerticalPosition] = GAME_ELEMENTS.TARGET;
 
         console.debug(grid);
