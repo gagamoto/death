@@ -448,19 +448,11 @@ class Game {
         }
     }
     drawInstructions() {
-        this.context.font = String(this.blockHeight) + "px sans-serif";
+        this.context.font = String(this.blockHeight/2) + "px sans-serif";
         this.context.fillStyle = COLOR_INSTRUCTIONS;
         this.context.textAlign = "center";
         this.context.fillText(
-            "LVL "+ this.level, REFERENCE_SIZE / 2, this.blockHeight * 2 - this.blockHeight / 4);
-        if (this.level == 1) {
-            this.context.font = String(this.blockHeight/2) + "px sans-serif";
-            // FIXME DOUBLE TAP TO JUMP?
-            this.context.fillText(
-                "TAP TO MOVE", REFERENCE_SIZE / 2, this.blockHeight * 4 - this.blockHeight / 4);
-            this.context.fillText(
-                "GET THY HALO", REFERENCE_SIZE / 2, this.blockHeight * 6 - this.blockHeight / 4);
-        }
+            "LEVEL "+ this.level, REFERENCE_SIZE / 2, this.blockHeight * 1 - this.blockHeight / 4);
     }
     // drawVersion() {
     //     this.context.font = "4px Times";
