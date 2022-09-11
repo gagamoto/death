@@ -160,8 +160,8 @@ class Platform extends GameObject {
         super(context, x, y, width, height);
         this.dead = false;
         // FIXME INITIALIZE TRIGGERED MEMBER
-        this.color = COLOR_CLAIR;
-        this.borderColor = COLOR_NOIR;
+        this.color = COLOR_SOMBRE;
+        this.borderColor = null;
         this.MAX_POP_FRAMES = 20;
     }
     bounce() {
@@ -172,7 +172,7 @@ class Platform extends GameObject {
         } else {this.bounceCount = 1;} // MAX
     }
     draw() {
-        let thickness = this.width * .05;
+        let thickness = this.width * .02;
         let bounce = 0;
         if (this.bounceCount != null) {
             bounce = Math.sin(this.bounceCount*Math.PI) * .5;
@@ -418,33 +418,27 @@ class Game {
 
         // Is character in Hell?
         if (this.character.getTop() > REFERENCE_SIZE) {
-            console.log("Hell!");
+            console.debug("Hell!");
             this.endGameCycle(false);
         }
     }
-    cancelControls() {for (const key in gControls) {delete gControls[key];}}
+    cancelControls() {}
     control() {
-        console.log(gClicked);
+
         if (gClicked) {
-            if (this.character.dx == 0) {
+            if (this.state == GAME_STATE.INITIALIZED) {
                 this.setState(GAME_STATE.PLAYING);
-                this.character.dx = this.character.maxRunningSpeed;
-            } else if (!this.character.isFalling()) {
-                this.character.dx = -this.character.dx; // FIXME
+            } 
+            if (this.state == GAME_STATE.PLAYING && !this.character.isFalling()) {
+                if (this.character.dx == 0) {
+                    this.character.dx = this.character.maxRunningSpeed;
+                }
+                else {
+                    this.character.dx = -this.character.dx; // FIXME
+                }
             }
-            gClicked = false;
+            gClicked = false; // FIXME COYOTE TIME
         }
-        // FIXME CONCURENCY
-        // if (gControls["ArrowLeft"] == true) {
-        //     console.log("Left pressed!");
-        //     if (this.state == GAME_STATE.INITIALIZED) {this.setState(GAME_STATE.PLAYING);}
-        //     this.character.dx = -this.character.maxRunningSpeed; // FIXME
-        // }
-        // if (gControls["ArrowRight"] == true) {
-        //     console.log("Rigth pressed!");
-        //     if (this.state == GAME_STATE.INITIALIZED) {this.setState(GAME_STATE.PLAYING);}
-        //     this.character.dx = this.character.maxRunningSpeed; // FIXME
-        // }
     }
     drawInstructions() {
         this.context.font = String(this.blockHeight) + "px sans-serif";
@@ -454,8 +448,13 @@ class Game {
             "LVL "+ this.level, REFERENCE_SIZE / 2, this.blockHeight * 2 - this.blockHeight / 4);
         if (this.level == 1) {
             this.context.font = String(this.blockHeight/2) + "px sans-serif";
+            // FIXME DOUBLE TAP TO JUMP?
             this.context.fillText(
-                "CLICK TO MOVE!", REFERENCE_SIZE / 2, this.blockHeight * 4 - this.blockHeight / 4);
+                "TAP TO MOVE", REFERENCE_SIZE / 2, this.blockHeight * 4 - this.blockHeight / 4);
+            this.context.fillText(
+                "SEEK THY HALO", REFERENCE_SIZE / 2, this.blockHeight * 6 - this.blockHeight / 4);
+            this.context.fillText(
+                "GOOD LUCK!", REFERENCE_SIZE / 2, this.blockHeight * 8 - this.blockHeight / 4);
         }
     }
     drawVersion() {
@@ -493,9 +492,6 @@ class Game {
         this.drawVersion() // FIXME REMOVE
     }
     generateGrid() {
-        const MARGIN_FOR_WALLS = 1;
-        const MIN_VERTICAL_POSITION = 4;
-
         let grid = new Array(this.gridWidth);
         for (let i = 0; i < this.gridWidth; i++) {
             grid[i] = new Array(this.gridHeight);
@@ -503,7 +499,7 @@ class Game {
                 grid[i][j] = GAME_ELEMENTS.DEFAULT; // Placeholder
             }
         }
-        // let numLevelCompleted = this.level - 1;
+        let numLevelCompleted = this.level - 1;
 
         // // Randomly sprinkle mortals!
         // const MAX_MORTAL_PLATFORMS = this.gridWidth;
@@ -533,10 +529,6 @@ class Game {
                 if (grid[i][j] != GAME_ELEMENTS.DEFAULT) {
                     continue; // Already set
                 }
-                // if (i == 0 || i == this.gridWidth-1) {
-                //     // FIXME IMMORTAL
-                //     grid[i][j] = GAME_ELEMENTS.IMMORTALPLATFORM; // Full walls
-                // }
                 // --- Platforms
                 if (j > 0) { // Skip first line
                     if (!(j%2)) { // Only on odd lines
@@ -549,12 +541,18 @@ class Game {
                 }
             }
         }
-        grid[1][1] = GAME_ELEMENTS.MAINCHARACTER;
+        grid[1][0] = GAME_ELEMENTS.MAINCHARACTER;
 
-        let targetHorizontalPosition = MARGIN_FOR_WALLS + Math.floor(
-            Math.random()*(this.gridWidth-MARGIN_FOR_WALLS*2));
-        let targetVerticalPosition = MIN_VERTICAL_POSITION + Math.floor(
-            Math.random()*(this.gridHeight-MIN_VERTICAL_POSITION));
+        let targetHorizontalPosition = this.gridWidth - 2;
+        let targetVerticalPosition = 1;
+        if (numLevelCompleted > 0) {
+            // FIXME PREVENT WIN ON START
+            targetVerticalPosition = (numLevelCompleted + 1) % this.gridHeight;
+            // targetHorizontalPosition = MARGIN_FOR_WALLS + Math.floor(
+            //     Math.random()*(this.gridWidth-MARGIN_FOR_WALLS*2));
+            // FIXME IF LAST LINE ADD HORIZONTAL MARGIN
+        }
+
         grid[targetHorizontalPosition][targetVerticalPosition] = GAME_ELEMENTS.TARGET;
 
         console.debug(grid);
@@ -648,41 +646,13 @@ function initializeCanvas() {
 let gControls = new Object(); // FIXME NOT GLOBAL
 let gClicked = false;
 
-// function keyDownHandler(e) {
-//     zzfxX.resume();
-//     console.debug("Key down: " + e.key);
-//     gControls[e.key] = true;
-// }
-
 function keyUpHandler(e) {
-    // console.debug("Key up: " + e.key);
-    // gControls[e.key] = false;
     gClicked = true;
 }
 function clickHandler(e) {
-    // console.debug("Key up: " + e.key);
-    // gControls[e.key] = false;
-    console.warn("Hello!");
     gClicked = true;
 }
-// function touchDownHandler(e) {
-//     // zzfxX.resume();
-//     e.preventDefault();
-//     console.log(e);
-//     console.log(e.changedTouches[0]);
-//     if (e.changedTouches[0].clientX >= window.innerWidth / 2) {
-//         keyDownHandler({"key": "ArrowRight"});
-//     }
-//     else { keyDownHandler({"key": "ArrowLeft"});}
-// }
-
 function touchUpHandler(e) {
-    // e.preventDefault();
-    // console.log(e);
-    // if (e.changedTouches[0].clientX >= window.innerWidth / 2) {
-    //     keyUpHandler({"key": "ArrowRight"});
-    // }
-    // else { keyUpHandler({"key": "ArrowLeft"});}
     gClicked = true;
 }
 
