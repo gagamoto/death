@@ -76,19 +76,16 @@ function drawBottomCircle(context = null, x = 0, y = 0, radius = 0, fillStyle = 
 
 const REFERENCE_SIZE = 100;
 
-const ALT_BLACK = "black";
-const ALT_WHITE = "white";
-const ALT_RED = "red";
-const ALT_YELLOW = "yellow";
-const ALT_BLUE = "blue";
-// POINPY COLORS
-const COLOR_LEAVES = "rgb(32, 245, 159)";
-const COLOR_SKY = "rgb(221, 243, 35)";
-const COLOR_TRUNKS = "rgb(84, 230, 159)";
-const COLOR_CAT = "rgb(37, 140, 243)";
-const COLOR_BORDERS = "#2B333C";
-const COLOR_BODY = "#45DE72";
-const COLOR_LEGS = "#F7D400";
+// --- PALETTE
+const COLOR_NOIR = "#1a2639";
+const COLOR_SOMBRE = "#3e4a61";
+const COLOR_CLAIR = "#d9dad7";
+const COLOR_SAILLANT = "#c24d2c";
+const COLOR_WHITE = "white";
+
+const COLOR_BACKGROUND = COLOR_CLAIR;
+const COLOR_WALLS = COLOR_SOMBRE;
+const COLOR_INSTRUCTIONS = COLOR_SOMBRE;
 
 const SOUND_TARGET = [1.5,1,319,.03,.28,.48,1,.61,,.4,-233,.05,.11,.1,,,.07,.59,.16,.43]; // Powerup 186
 const SOUND_POP = [5.25,,378,,.02,.02,3,2.6,,,-338,,,,120,,,.78,.01,.05];
@@ -150,12 +147,12 @@ class Target extends GameObject {
             this.x + this.width / 2,
             this.y + this.height / 2 + Math.sin(bounce*Math.PI*2) * .5,
             this.width / 2 - thickness / 2 - margin,
-            null, ALT_WHITE, thickness);
+            null, COLOR_SOMBRE, thickness);
         drawCircle(this.context,
             this.x + this.width / 2,
             this.y + this.height / 2 + Math.sin(bounce*Math.PI*2) * .5,
             this.width / 2 - thickness / 2 - margin,
-            null, ALT_YELLOW, thickness * .7);
+            null, COLOR_SAILLANT, thickness * .7);
     }
 }
 class Platform extends GameObject {
@@ -163,8 +160,8 @@ class Platform extends GameObject {
         super(context, x, y, width, height);
         this.dead = false;
         // FIXME INITIALIZE TRIGGERED MEMBER
-        this.color = COLOR_CAT;
-        this.borderColor = COLOR_BORDERS;
+        this.color = COLOR_CLAIR;
+        this.borderColor = COLOR_NOIR;
         this.MAX_POP_FRAMES = 20;
     }
     bounce() {
@@ -197,7 +194,7 @@ class Platform extends GameObject {
                     this.x + this.width / 2,
                     this.y + this.height / 2,
                     size,
-                    null, ALT_RED, thickness);
+                    null, COLOR_SAILLANT, thickness);
         }
     }
     release() {
@@ -213,7 +210,7 @@ class Platform extends GameObject {
 class ImmortalPlatform extends Platform {
     constructor(context, x, y, width, height) {
         super(context, x, y, width, height);
-        this.color = ALT_BLUE;
+        this.color = "magenta";
     }
     release(){}
     trigger() {
@@ -227,7 +224,7 @@ class ImmortalPlatform extends Platform {
 class MortalPlatform extends Platform {
     constructor(context, x, y, width, height) {
         super(context, x, y, width, height);
-        this.color = ALT_RED;
+        this.color = COLOR_SAILLANT;
         this.mortal = true;
     }
 }
@@ -299,23 +296,24 @@ class MainCharacter extends GameObject {
 
         let strokeWidth = this.width * .1;
         // LEGS
-        drawLine(this.context, xleftHip, yleftHip, xleftHeel, yleftHeel, COLOR_LEGS, legThickness);
-        drawLine(this.context, xrightHip, yrightHip, xrightHeel, yrightHeel, COLOR_LEGS, legThickness);
+        // FIXME LEG BORDERS
+        drawLine(this.context, xleftHip, yleftHip, xleftHeel, yleftHeel, COLOR_NOIR, legThickness);
+        drawLine(this.context, xrightHip, yrightHip, xrightHeel, yrightHeel, COLOR_NOIR, legThickness);
         // BODY
         drawBox(
             this.context,
             this.x + xMargin / 2, this.y,
             bodyWidth, bodyHeight,
-            COLOR_BODY, COLOR_BORDERS, strokeWidth);
+            COLOR_NOIR, null, null);
         // EYE
         drawCircle(
             this.context, eyeCenter, eyeMiddle,
             eyeRadius,
-            ALT_WHITE, COLOR_BORDERS, .3);
+            COLOR_WHITE, null, null);
         drawCircle(
             this.context, pupilCenter, eyeMiddle,
             eyeRadius / 2,
-            COLOR_BORDERS, null, null);
+            COLOR_NOIR, null, null);
     }
     isFalling() {
         return (this.platformUid == null);
@@ -367,7 +365,7 @@ class Game {
         this.state = GAME_STATE.INITIALIZATION;
         this.level = null;
         this.grid = null;
-        this.gridWidth = 12;
+        this.gridWidth = 8;
         this.blockWidth = REFERENCE_SIZE / this.gridWidth; // Platforms
         this.gridHeight = this.gridWidth; // Square
         this.blockHeight = REFERENCE_SIZE / this.gridHeight;
@@ -376,6 +374,13 @@ class Game {
         this.target = null;
     }
     collisions() {
+        // Collisions between character and walls!
+
+        if (this.character.getRight() > REFERENCE_SIZE ||
+            this.character.getLeft() < 0) {
+            this.character.turnBack(); // FIXME BLOCK
+        }
+
         // Collisions between character and platforms!
         this.character.platformUid = null;
         for (let platform of this.platforms) {
@@ -419,53 +424,59 @@ class Game {
     }
     cancelControls() {for (const key in gControls) {delete gControls[key];}}
     control() {
+        console.log(gClicked);
+        if (gClicked) {
+            if (this.character.dx == 0) {
+                this.setState(GAME_STATE.PLAYING);
+                this.character.dx = this.character.maxRunningSpeed;
+            } else {
+                this.character.dx = -this.character.dx; // FIXME
+            }
+            gClicked = false;
+        }
         // FIXME CONCURENCY
-        if (gControls["ArrowLeft"] == true) {
-            console.log("Left pressed!");
-            if (this.state == GAME_STATE.INITIALIZED) {this.setState(GAME_STATE.PLAYING);}
-            this.character.dx = -this.character.maxRunningSpeed; // FIXME
-        }
-        if (gControls["ArrowRight"] == true) {
-            console.log("Rigth pressed!");
-            if (this.state == GAME_STATE.INITIALIZED) {this.setState(GAME_STATE.PLAYING);}
-            this.character.dx = this.character.maxRunningSpeed; // FIXME
-        }
+        // if (gControls["ArrowLeft"] == true) {
+        //     console.log("Left pressed!");
+        //     if (this.state == GAME_STATE.INITIALIZED) {this.setState(GAME_STATE.PLAYING);}
+        //     this.character.dx = -this.character.maxRunningSpeed; // FIXME
+        // }
+        // if (gControls["ArrowRight"] == true) {
+        //     console.log("Rigth pressed!");
+        //     if (this.state == GAME_STATE.INITIALIZED) {this.setState(GAME_STATE.PLAYING);}
+        //     this.character.dx = this.character.maxRunningSpeed; // FIXME
+        // }
     }
-    drawLevel() {
-        this.context.font = "6px Helvetica";
-        this.context.fillStyle = ALT_WHITE;
+    drawInstructions() {
+        this.context.font = String(this.blockHeight) + "px sans-serif";
+        this.context.fillStyle = COLOR_INSTRUCTIONS;
         this.context.textAlign = "center";
-        this.context.fillText("LEVEL "+ this.level, REFERENCE_SIZE / 2, REFERENCE_SIZE * .1);
+        this.context.fillText(
+            "LVL "+ this.level, REFERENCE_SIZE / 2, this.blockHeight * 2 - this.blockHeight / 4);
+        if (this.level == 1) {
+            this.context.font = String(this.blockHeight/2) + "px sans-serif";
+            this.context.fillText(
+                "CLICK TO MOVE!", REFERENCE_SIZE / 2, this.blockHeight * 4 - this.blockHeight / 4);
+        }
     }
     drawVersion() {
         this.context.font = "4px Times";
-        this.context.fillStyle = ALT_RED;
+        this.context.fillStyle = COLOR_SAILLANT;
         this.context.textAlign = "left";
-        this.context.fillText("version 0.d (sept. 10 18:31) ", 0, 4);
+        this.context.fillText("version 1.a (sept. 11 12:47) ", 0, 4);
     }
-    animateBackGround() {
-        const MAX_TRUNKS = 2;
+    drawBackground() {
+        const WALL_WIDTH = REFERENCE_SIZE * 0.02;
         // -- Draw sky
-        drawBox(
-            this.context, 0, 0, REFERENCE_SIZE, REFERENCE_SIZE, COLOR_TRUNKS); // FIXME SWITCHABLE
-        // -- Draw a leaf
-        if (this.leaf == undefined) {
-            this.leaf = {
-                "x": 0, "y": 0,
-                "radius": REFERENCE_SIZE / 2};
-        }
-        else {
-            this.leaf.x = (this.leaf.x + 0.01) % REFERENCE_SIZE;
-            this.leaf.y = (this.leaf.y + 0.01) % REFERENCE_SIZE;
-        }
-        drawCircle(this.context, this.leaf.x, this.leaf.y, this.leaf.radius, COLOR_LEAVES); // FIXME FLOATING
-        drawCircle(this.context, this.leaf.x-REFERENCE_SIZE, this.leaf.y, this.leaf.radius, COLOR_LEAVES); // FIXME FLOATING
+        drawBox(this.context, 0, 0, REFERENCE_SIZE, REFERENCE_SIZE, COLOR_BACKGROUND);
+        // -- Draw walls
+        drawBox(this.context, 0, 0, WALL_WIDTH, REFERENCE_SIZE, COLOR_WALLS);
+        drawBox(this.context, REFERENCE_SIZE - WALL_WIDTH, 0, REFERENCE_SIZE, REFERENCE_SIZE, COLOR_WALLS);
     }
     draw() {
         this.context.clearRect(0, 0, this.context.canvas.clientWidth, this.context.canvas.clientHeight);
 
         // -- Background
-        this.animateBackGround();
+        this.drawBackground();
 
         // DRAW PLATFORMS
         for (let platform of this.platforms) {
@@ -477,7 +488,7 @@ class Game {
         this.character.draw();
         if (this.state == GAME_STATE.INITIALIZATION ||
             this.state == GAME_STATE.INITIALIZED) {
-            this.drawLevel();
+            this.drawInstructions();
         }
         this.drawVersion() // FIXME REMOVE
     }
@@ -492,29 +503,29 @@ class Game {
                 grid[i][j] = GAME_ELEMENTS.DEFAULT; // Placeholder
             }
         }
+        // let numLevelCompleted = this.level - 1;
 
-        let numLevelCompleted = this.level - 1;
-        // Randomly sprinkle mortals!
-        const MAX_MORTAL_PLATFORMS = this.gridWidth;
-        let numberMortalsToSet = 0; // (numLevelCompleted % MAX_MORTAL_PLATFORMS);
-        while (numberMortalsToSet-- > 0) {
-            let mortalHorizontalPosition = MARGIN_FOR_WALLS + Math.floor(
-                Math.random()*(this.gridWidth-MARGIN_FOR_WALLS*2));
-            let mortalVerticalPosition = MIN_VERTICAL_POSITION + Math.floor(
-                Math.random()*(this.gridHeight-MIN_VERTICAL_POSITION));
-            grid[mortalHorizontalPosition][mortalVerticalPosition] = GAME_ELEMENTS.MORTALPLATFORM;
-        }
+        // // Randomly sprinkle mortals!
+        // const MAX_MORTAL_PLATFORMS = this.gridWidth;
+        // let numberMortalsToSet = 0; // (numLevelCompleted % MAX_MORTAL_PLATFORMS);
+        // while (numberMortalsToSet-- > 0) {
+        //     let mortalHorizontalPosition = MARGIN_FOR_WALLS + Math.floor(
+        //         Math.random()*(this.gridWidth-MARGIN_FOR_WALLS*2));
+        //     let mortalVerticalPosition = MIN_VERTICAL_POSITION + Math.floor(
+        //         Math.random()*(this.gridHeight-MIN_VERTICAL_POSITION));
+        //     grid[mortalHorizontalPosition][mortalVerticalPosition] = GAME_ELEMENTS.MORTALPLATFORM;
+        // }
 
-        // Randomly sprinkle immortals!
-        const MAX_IMMORTAL_PLATFORMS = this.gridWidth;
-        let numberImmortalsToSet = (numLevelCompleted * 2 % MAX_IMMORTAL_PLATFORMS);
-        while (numberImmortalsToSet-- > 0) {
-            let immortalHorizontalPosition = MARGIN_FOR_WALLS + Math.floor(
-                Math.random()*(this.gridWidth-MARGIN_FOR_WALLS*2));
-            let immortalVerticalPosition = MIN_VERTICAL_POSITION + Math.floor(
-                Math.random()*(this.gridHeight-MIN_VERTICAL_POSITION));
-            grid[immortalHorizontalPosition][immortalVerticalPosition] = GAME_ELEMENTS.IMMORTALPLATFORM;
-        }
+        // // Randomly sprinkle immortals!
+        // const MAX_IMMORTAL_PLATFORMS = this.gridWidth;
+        // let numberImmortalsToSet = (numLevelCompleted * 2 % MAX_IMMORTAL_PLATFORMS);
+        // while (numberImmortalsToSet-- > 0) {
+        //     let immortalHorizontalPosition = MARGIN_FOR_WALLS + Math.floor(
+        //         Math.random()*(this.gridWidth-MARGIN_FOR_WALLS*2));
+        //     let immortalVerticalPosition = MIN_VERTICAL_POSITION + Math.floor(
+        //         Math.random()*(this.gridHeight-MIN_VERTICAL_POSITION));
+        //     grid[immortalHorizontalPosition][immortalVerticalPosition] = GAME_ELEMENTS.IMMORTALPLATFORM;
+        // }
 
         for (let i = 0; i < this.gridWidth; i++) {
             for (let j = 0; j < this.gridHeight; j++) {
@@ -522,23 +533,23 @@ class Game {
                 if (grid[i][j] != GAME_ELEMENTS.DEFAULT) {
                     continue; // Already set
                 }
-                if (i == 0 || i == this.gridWidth-1) {
-                    // FIXME IMMORTAL
-                    grid[i][j] = GAME_ELEMENTS.IMMORTALPLATFORM; // Full walls
+                // if (i == 0 || i == this.gridWidth-1) {
+                //     // FIXME IMMORTAL
+                //     grid[i][j] = GAME_ELEMENTS.IMMORTALPLATFORM; // Full walls
+                // }
+                // --- Platforms
+                if (j > 0) { // Skip first line
+                    if (!(j%2)) { // Only on odd lines
+                        grid[i][j] = GAME_ELEMENTS.PLATFORM;
+                    }
                 }
-                else if (j >= 2) { // LEAVE 2 LINES
-                    // FIXME ADD EATING PLATFORMS
-                    // FIXME ADD NOTHING
-                    grid[i][j] = GAME_ELEMENTS.PLATFORM;
-                }
+                // -- Empty by default
                 else {
                     grid[i][j] = GAME_ELEMENTS.NOTHING; // NOTHING BY DEFAULT
                 }
             }
         }
-        let characterHorizontalPosition = MARGIN_FOR_WALLS + Math.floor(
-            Math.random()*(this.gridWidth-MARGIN_FOR_WALLS*2));
-        grid[characterHorizontalPosition][0] = GAME_ELEMENTS.MAINCHARACTER;
+        grid[1][1] = GAME_ELEMENTS.MAINCHARACTER;
 
         let targetHorizontalPosition = MARGIN_FOR_WALLS + Math.floor(
             Math.random()*(this.gridWidth-MARGIN_FOR_WALLS*2));
@@ -566,7 +577,7 @@ class Game {
                     // Construct main character
                     this.character = new MainCharacter(
                         this.context, i * this.blockWidth, j * this.blockHeight,
-                        6, 6);
+                        this.blockWidth, this.blockHeight);
                 }
                 else if (this.grid[i][j] == GAME_ELEMENTS.TARGET) {
                     // Set target
@@ -635,36 +646,44 @@ function initializeCanvas() {
 }
 
 let gControls = new Object(); // FIXME NOT GLOBAL
+let gClicked = false;
 
-function keyDownHandler(e) {
-    zzfxX.resume();
-    console.debug("Key down: " + e.key);
-    gControls[e.key] = true;
-}
+// function keyDownHandler(e) {
+//     zzfxX.resume();
+//     console.debug("Key down: " + e.key);
+//     gControls[e.key] = true;
+// }
 
 function keyUpHandler(e) {
-    console.debug("Key up: " + e.key);
-    gControls[e.key] = false;
+    // console.debug("Key up: " + e.key);
+    // gControls[e.key] = false;
+    gClicked = true;
 }
-
-function touchDownHandler(e) {
-    // zzfxX.resume();
-    e.preventDefault();
-    console.log(e);
-    console.log(e.changedTouches[0]);
-    if (e.changedTouches[0].clientX >= window.innerWidth / 2) {
-        keyDownHandler({"key": "ArrowRight"});
-    }
-    else { keyDownHandler({"key": "ArrowLeft"});}
+function clickHandler(e) {
+    // console.debug("Key up: " + e.key);
+    // gControls[e.key] = false;
+    console.warn("Hello!");
+    gClicked = true;
 }
+// function touchDownHandler(e) {
+//     // zzfxX.resume();
+//     e.preventDefault();
+//     console.log(e);
+//     console.log(e.changedTouches[0]);
+//     if (e.changedTouches[0].clientX >= window.innerWidth / 2) {
+//         keyDownHandler({"key": "ArrowRight"});
+//     }
+//     else { keyDownHandler({"key": "ArrowLeft"});}
+// }
 
 function touchUpHandler(e) {
-    e.preventDefault();
-    console.log(e);
-    if (e.changedTouches[0].clientX >= window.innerWidth / 2) {
-        keyUpHandler({"key": "ArrowRight"});
-    }
-    else { keyUpHandler({"key": "ArrowLeft"});}
+    // e.preventDefault();
+    // console.log(e);
+    // if (e.changedTouches[0].clientX >= window.innerWidth / 2) {
+    //     keyUpHandler({"key": "ArrowRight"});
+    // }
+    // else { keyUpHandler({"key": "ArrowLeft"});}
+    gClicked = true;
 }
 
 function main() {
@@ -674,10 +693,9 @@ function main() {
     let game = new Game(myCanvas);
     game.run();
     // -- Control
-    document.addEventListener("keydown", keyDownHandler, false);
     document.addEventListener("keyup", keyUpHandler, false);
-    document.addEventListener("touchstart", touchDownHandler, false);
     document.addEventListener("touchend", touchUpHandler, false);
+    document.addEventListener("click", clickHandler, false);
     // --
     console.log("Bye, Death!")
 }
