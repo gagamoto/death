@@ -85,7 +85,7 @@ const COLOR_WHITE = "white";
 
 const COLOR_BACKGROUND = COLOR_CLAIR;
 const COLOR_WALLS = COLOR_SOMBRE;
-const COLOR_INSTRUCTIONS = COLOR_SOMBRE;
+const COLOR_INSTRUCTIONS = COLOR_NOIR;
 
 const SOUND_TARGET = [.5,,1634,.01,.07,.13,,1.69,2.2,4.5,,,.03,.1,2.8,,,.43,.05];
 const SOUND_POP = [5.25,,378,,.02,.02,3,2.6,,,-338,,,,120,,,.78,.01,.05];
@@ -543,16 +543,28 @@ class Game {
         }
         grid[1][0] = GAME_ELEMENTS.MAINCHARACTER;
 
+        // Position Halo
         let targetHorizontalPosition = this.gridWidth - 2;
         let targetVerticalPosition = 1;
+        // -- Increase depth
         if (numLevelCompleted > 0) {
             // FIXME PREVENT WIN ON START
             targetVerticalPosition = (numLevelCompleted + 1) % this.gridHeight;
-            // targetHorizontalPosition = MARGIN_FOR_WALLS + Math.floor(
-            //     Math.random()*(this.gridWidth-MARGIN_FOR_WALLS*2));
-            // FIXME IF LAST LINE ADD HORIZONTAL MARGIN
+            // -- No jumps
+            if (targetVerticalPosition == 0) {
+                targetVerticalPosition = 3;
+            }
         }
-
+        // -- Random horizontal
+        if (targetVerticalPosition > 2) {
+            targetHorizontalPosition = Math.floor(Math.random()*this.gridWidth);
+        }
+        if (targetVerticalPosition == this.gridHeight - 1) {
+            console.log("Last line!")
+            if (targetHorizontalPosition < 2) {targetHorizontalPosition = 2;}
+            else if (targetHorizontalPosition > this.gridWidth - 3) {
+                targetHorizontalPosition = this.gridWidth - 3;}
+        }
         grid[targetHorizontalPosition][targetVerticalPosition] = GAME_ELEMENTS.TARGET;
 
         console.debug(grid);
@@ -650,6 +662,11 @@ function keyUpHandler(e) {
     gClicked = true;
 }
 function clickHandler(e) {
+    console.log("Simple click!")
+    gClicked = true;
+}
+function dblClickHandler(e) {
+    console.log("Double click!!")
     gClicked = true;
 }
 function touchUpHandler(e) {
@@ -666,6 +683,7 @@ function main() {
     document.addEventListener("keyup", keyUpHandler, false);
     document.addEventListener("touchend", touchUpHandler, false);
     document.addEventListener("click", clickHandler, false);
+    document.addEventListener("dblclick", dblClickHandler, false);
     // --
     console.log("Bye, Death!")
 }
