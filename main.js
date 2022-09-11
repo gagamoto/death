@@ -117,7 +117,7 @@ class GameObject {
             this.context,
             this.x, this.y,
             this.width, this.height,
-            null, "magenta", .5); // FIXME
+            null, "magenta", 1); // Debug method
     }
     getLeft() { return this.x; }
     getRight() { return this.x + this.width; }
@@ -188,7 +188,7 @@ class Platform extends GameObject {
         else if (this.popCountDown > 0) {
                 this.popCountDown--;
                 let step = this.MAX_POP_FRAMES - this.popCountDown;
-                let size = step / this.width;
+                let size = step / (this.width / 2);
                 let thickness = .1;
                 drawCircle(this.context,
                     this.x + this.width / 2,
@@ -294,9 +294,7 @@ class MainCharacter extends GameObject {
             yrightHeel = yrightHeel - Math.cos(this.animation_step*Math.PI) * hipSpace /4 - hipSpace/8;
         }
 
-        let strokeWidth = this.width * .1;
         // LEGS
-        // FIXME LEG BORDERS
         drawLine(this.context, xleftHip, yleftHip, xleftHeel, yleftHeel, COLOR_NOIR, legThickness);
         drawLine(this.context, xrightHip, yrightHip, xrightHeel, yrightHeel, COLOR_NOIR, legThickness);
         // BODY
@@ -321,7 +319,7 @@ class MainCharacter extends GameObject {
     move() {
         // FIXME DECELERATE IF NOT GROUNDED
         this.x += this.dx; // FIXME TIMES SPEED
-        if (this.isFalling()) {
+        if (this.isFalling()) { // FIXME REMOVE THIS STUPID CONDITION
             this.y += this.dy;
         }
     }
@@ -378,7 +376,7 @@ class Game {
 
         if (this.character.getRight() > REFERENCE_SIZE ||
             this.character.getLeft() < 0) {
-            this.character.turnBack(); // FIXME BLOCK
+            this.character.turnBack(); // FIXME BLOCK CONTROL FOR SOME TIME
         }
 
         // Collisions between character and platforms!
@@ -389,7 +387,7 @@ class Game {
             }
             let platformTriggered = platform.triggered;
 
-            // Is character running in the platform?
+            // Is character crashing in the platform?
             if (this.character.isAlignedto(platform)) { this.character.crashInPlatform(platform); }
 
             // Is character grounded on a platform?
@@ -409,9 +407,7 @@ class Game {
             }
         }
         // Is character within the target?
-        // FIXME JUST TOUCH, GO INSIDE, OR GO THROUGH?
-        // FIXME MARGIN
-        if (this.character.isAlignedto(this.target)){this.endGameCycle(true);}
+        if (this.character.isAlignedto(this.target)) {this.endGameCycle(true);}
 
         // Is character entering Hell?
         // FIXME DRAW LAVA POP
