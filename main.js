@@ -426,7 +426,6 @@ class Game {
 
         // Is character in Hell?
         if (this.character.getTop() > REFERENCE_SIZE) {
-            console.debug("Hell!");
             this.endGameCycle(false);
         }
     }
@@ -509,7 +508,6 @@ class Game {
 
         for (let i = 0; i < this.gridWidth; i++) {
             for (let j = 0; j < this.gridHeight; j++) {
-                console.log(grid[i][j])
                 if (grid[i][j] != GAME_ELEMENTS.DEFAULT) {
                     continue; // Already set
                 }
@@ -548,7 +546,6 @@ class Game {
         // }
         grid[targetHorizontalPosition][targetVerticalPosition] = GAME_ELEMENTS.TARGET;
 
-        console.debug(grid);
         this.grid = grid;
     }
     initialize() {
@@ -556,7 +553,6 @@ class Game {
             this.level = 1;
         }
 
-        console.log("Level "+ this.level); // FIXME DEBUG
         this.generateGrid(this.gridWidth, this.gridHeight);
 
         // Construct platforms
@@ -601,7 +597,6 @@ class Game {
     }
     run() {
         if (this.state == GAME_STATE.INITIALIZATION) {
-            console.debug("Initialize!");
             this.initialize();
         }
         this.collisions();
@@ -643,12 +638,10 @@ function keyUpHandler(e) {
     gClicked = true;
 }
 function clickHandler(e) {
-    console.log("Simple click!")
     gClicked = true;
 }
 function dblClickHandler(e) {
-    console.log("Double click!!")
-    gClicked = true;
+    // gClicked = true;
 }
 function touchUpHandler(e) {
     gClicked = true;
